@@ -23,7 +23,7 @@ const HOME = [
   { summary: 'Holiday', start: '2026-11-09', end: '2026-11-10', all_day: true },
 ]
 
-function fakeHass() {
+function fakeHass(extra: unknown[] = []) {
   return {
     config: { time_zone: 'UTC' },
     locale: { language: 'en', time_format: '24', first_weekday: 'monday' },
@@ -35,7 +35,7 @@ function fakeHass() {
         message: Record<string, unknown>,
       ) => {
         queueMicrotask(() =>
-          callback({ events: message.entity_id === 'calendar.work' ? WORK : HOME }),
+          callback({ events: message.entity_id === 'calendar.work' ? [...WORK, ...extra] : HOME }),
         )
         return Promise.resolve(() => undefined)
       },
@@ -45,10 +45,10 @@ function fakeHass() {
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 5))
 
-async function mount(config: Record<string, unknown> = {}): Promise<Card> {
+async function mount(config: Record<string, unknown> = {}, extra: unknown[] = []): Promise<Card> {
   const element = document.createElement('eventide-card') as Card
   element.setConfig({ calendars: ['calendar.work', 'calendar.home'], ...config })
-  element.hass = fakeHass() as never
+  element.hass = fakeHass(extra) as never
   document.body.append(element)
   await tick()
   await element.updateComplete
@@ -92,7 +92,7 @@ describe('eventide-card', () => {
     const running = rowByTitle(element, 'Daily sync')
     expect(running?.className).toContain('running')
     expect(running?.querySelector<HTMLElement>('.fill')?.style.width).toBe('46.7%')
-    expect(running?.querySelector('.eta')?.textContent).toContain('7 min left')
+    expect(running?.querySelector('.eta')?.textContent).toBe('7 min left')
 
     const soon = rowByTitle(element, 'Sprint demo')
     expect(soon?.className).toContain('soon')
@@ -180,6 +180,59 @@ describe('eventide-card', () => {
     expect(rowByTitle(element, 'Sprint demo')?.getAttribute('style')).toContain('oklch(from')
     expect(rowByTitle(element, 'Dentist')?.getAttribute('style')).toContain('--c:red')
     element.remove()
+  })
+
+  test('uses custom translations for the current language', async () => {
+    const element = await mount({
+      translations: { en: { today: 'Now-ish', all_day: 'Whole day', time_left: '{time} to go' } },
+    })
+    expect(element.shadowRoot?.querySelector('.group')?.textContent).toBe('Now-ish')
+    expect(rowByTitle(element, 'Holiday')?.querySelector('.sub')?.textContent).toContain(
+      'Whole day',
+    )
+    expect(rowByTitle(element, 'Daily sync')?.querySelector('.eta')?.textContent).toBe(
+      '7 min to go',
+    )
+    element.remove()
+  })
+
+  describe('cancelled events', () => {
+    const off = [
+      timed('Canceled: Old sync', 9, '14:00', '15:00'),
+      timed('Canceled: Solo', 13, '09:00', '10:00'),
+    ]
+    const dayCell = (element: Card, day: string) =>
+      [...(element.shadowRoot?.querySelectorAll('.day:not(.out)') ?? [])].find(
+        (item) => item.querySelector('.num')?.textContent?.trim() === day,
+      )
+
+    test('show struck through, without the prefix, a fill or a countdown', async () => {
+      const element = await mount({}, off)
+      const row = rowByTitle(element, 'Old sync')
+      expect(row?.className).toContain('cancelled')
+      expect(row?.querySelector('.fill')).toBeNull()
+      expect(row?.querySelector('.eta')?.textContent).toBe('Cancelled')
+      element.remove()
+    })
+
+    test('add nothing to the grid', async () => {
+      const element = await mount({}, off)
+      expect(dayCell(element, '13')?.querySelector('.dots')).toBeNull()
+      expect(dayCell(element, '13')?.className).not.toContain('busy')
+      element.remove()
+    })
+
+    test('can be hidden', async () => {
+      const element = await mount({ show_cancelled: false }, off)
+      expect(rowByTitle(element, 'Old sync')).toBeUndefined()
+      element.remove()
+    })
+
+    test('stay ordinary events when detection is off', async () => {
+      const element = await mount({ cancelled_match: '' }, off)
+      expect(rowByTitle(element, 'Canceled: Old sync')?.className).not.toContain('cancelled')
+      element.remove()
+    })
   })
 
   test('show_navigation hides the month buttons', async () => {

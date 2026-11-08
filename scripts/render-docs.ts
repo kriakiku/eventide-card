@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { dotsOf, seriesShift } from '../src/card/format.ts'
+import { dotsOf, etaText, seriesShift } from '../src/card/format.ts'
 import {
   buildAgenda,
   buildMonthGrid,
@@ -106,19 +106,6 @@ const text = (x: number, y: number, cls: string, size: number, value: string, at
 
 const clock = (ms: number) => new Date(ms).toISOString().slice(11, 16)
 
-const span = (ms: number) => {
-  const minutes = Math.round(ms / MIN)
-  if (minutes < 60) return `${minutes} min`
-  const rest = minutes % 60
-  return `${Math.floor(minutes / 60)} h${rest ? ` ${rest} min` : ''}`
-}
-
-const etaOf = (item: AgendaItem) => {
-  if (item.phase === 'finished') return `ended ${span(item.msSinceEnd)} ago`
-  if (item.phase === 'running') return `${span(item.msUntilEnd)} left`
-  return `in ${span(item.msUntilStart)}`
-}
-
 let clipId = 0
 
 function renderRow(
@@ -129,7 +116,7 @@ function renderRow(
   color = COLORS[item.event.calendarId] ?? WORK,
 ): string {
   const { event, phase } = item
-  const finished = phase === 'finished'
+  const finished = phase === 'finished' || event.cancelled
   const fillWidth = Math.round((item.fill ?? 0) * width)
   const id = `row${clipId++}`
   const date = new Date(event.startMs)
@@ -169,7 +156,14 @@ function renderRow(
       String(date.getUTCDate()),
       'text-anchor="middle" font-weight="600"',
     ),
-    text(x + 66, y + 28, finished ? 't3' : 't1', 15, event.summary, 'font-weight="600"'),
+    text(
+      x + 66,
+      y + 28,
+      finished ? 't3' : 't1',
+      15,
+      event.summary,
+      `font-weight="600"${event.cancelled ? ' text-decoration="line-through"' : ''}`,
+    ),
     text(
       x + 66,
       y + 47,
@@ -182,7 +176,7 @@ function renderRow(
       y + 37,
       finished ? 't3' : 't1',
       12.5,
-      etaOf(item),
+      event.cancelled ? 'Cancelled' : etaText(item, 'en'),
       `text-anchor="end" font-weight="${finished ? 400 : 600}"`,
     ),
   )
@@ -195,6 +189,7 @@ function renderCells(
   y: number,
   cellW: number,
   cellH: number,
+  scale = 1,
 ): string {
   const parts = WEEKDAYS.map((day, index) =>
     text(x + cellW * index + cellW / 2, y + 12, 't3', 11.5, day, 'text-anchor="middle"'),
@@ -214,9 +209,9 @@ function renderCells(
     parts.push(
       text(
         cx + cellW / 2,
-        cy + cellH / 2 - 5,
+        cy + cellH / 2 - 5 * scale,
         cls,
-        14,
+        14 * scale,
         String(Number(cell.dayKey.slice(8))),
         `text-anchor="middle"${weight}`,
       ),
@@ -242,18 +237,22 @@ function renderCells(
     }
     const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     rows.forEach((dotRow, rowIndex) => {
-      const dotY = cy + cellH / 2 + 6 + rowIndex * 8
-      const label = more > 0 && rowIndex === rows.length - 1 ? `+${more}` : ''
-      const dotsWidth = (dotRow.length - 1) * 10 + 6
-      const labelWidth = label.length * 5.5
-      const total = dotsWidth + (label ? 4 + labelWidth : 0)
-      const startX = cx + cellW / 2 - total / 2
+      const dotY = cy + cellH / 2 + (6 + rowIndex * 9.5) * scale
+      const center = cx + cellW / 2
+      const step = 10 * scale
       dotRow.forEach((id, dot) => {
+        const offset = rowIndex === 0 ? (dot - (dotRow.length - 1) / 2) * step : (dot - 0.5) * step
         const fill = cell.isToday ? '#FFFFFF' : (COLORS[id] ?? WORK)
-        parts.push(`<circle cx="${startX + 3 + dot * 10}" cy="${dotY}" r="3" fill="${fill}"/>`)
+        parts.push(`<circle cx="${center + offset}" cy="${dotY}" r="${3 * scale}" fill="${fill}"/>`)
       })
-      if (label) {
-        parts.push(text(startX + dotsWidth + 4, dotY + 3.5, cell.isToday ? 'on' : 't2', 10, label))
+      if (more > 0 && rowIndex === rows.length - 1) {
+        const slot = center + step / 2
+        parts.push(
+          ...[-1, 0, 1].map(
+            (side) =>
+              `<circle cx="${slot + side * 2.8 * scale}" cy="${dotY}" r="${0.9 * scale}" class="${cell.isToday ? 'on' : 't2'}"/>`,
+          ),
+        )
       }
     })
   })
@@ -376,7 +375,7 @@ function gradientPreview(): string {
     'Days tinted by one, two, three and four calendars',
     [
       `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
-      renderCells(cells, 20, 20, cellW, cellH),
+      renderCells(cells, 20, 20, cellW, cellH, 1.5),
     ].join(''),
   )
 }
@@ -439,6 +438,23 @@ function seriesPreview(): string {
     'Event rows whose colors vary around their calendar color',
     body.join(''),
   )
+}
+
+function cancelledPreview(): string {
+  const width = 520
+  const rows = [
+    ...fixture('work', 'Sprint demo', 9, '10:30', '11:30'),
+    ...fixture('work', 'Budget review', 9, '13:00', '14:00'),
+    ...fixture('home', 'Dentist', 9, '17:00', '17:45'),
+  ]
+  const body = rows.map((event, index) => {
+    const y = index * (ROW_H + ROW_GAP)
+    if (index !== 1) return renderRow({ event, ...phaseOf(event, NOW) }, 0, y, width)
+    const off = { ...event, cancelled: true }
+    return renderRow({ event: off, ...phaseOf(off, NOW), phase: 'later', fill: 0 }, 0, y, width)
+  })
+  const height = rows.length * (ROW_H + ROW_GAP) - ROW_GAP
+  return svg(width, height, 'A cancelled event struck through between two others', body.join(''))
 }
 
 function clockPreview(): string {
@@ -540,6 +556,7 @@ function tide(): string {
 
 mkdirSync(OUT, { recursive: true })
 const images: Record<string, string> = {
+  'cancelled.svg': cancelledPreview(),
   'clock.svg': clockPreview(),
   'gradient.svg': gradientPreview(),
   'series.svg': seriesPreview(),

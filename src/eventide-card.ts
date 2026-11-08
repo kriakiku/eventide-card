@@ -12,23 +12,26 @@ import {
   dayBackground,
   dayOfMonth,
   dotsOf,
-  etaLines,
+  etaText,
   fadeEdges,
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
   seriesColor,
   showsEta,
-  stringsFor,
+  labelOf,
+  resolveTranslation,
+  type Translation,
   weekdayShort,
   type LocaleLike,
 } from './card/format.ts'
 import { cardStyles } from './card/styles.ts'
 import { buildAgenda, dedupeEvents } from './core/agenda.ts'
+import { markCancelled } from './core/cancelled.ts'
 import { buildMonthGrid, buildWeekGrid } from './core/grid.ts'
 import { applyRules } from './core/rules.ts'
 import { addDays, dayKeyOf } from './core/timezone.ts'
-import type { AgendaGroup, AgendaItem, GridCell } from './core/types.ts'
+import type { AgendaGroup, AgendaItem, GridCell, NormalizedEvent } from './core/types.ts'
 
 interface Hass extends FeedHass {
   config: { time_zone: string }
@@ -42,8 +45,9 @@ interface RenderContext {
   language: string
   todayKey: string
   clock: Intl.DateTimeFormat
-  strings: ReturnType<typeof stringsFor>
+  translation: Translation
   colors: Map<string, string>
+  gridEvents: NormalizedEvent[]
 }
 
 const TICK_MS = 30_000
@@ -229,13 +233,13 @@ export class EventideCard extends LitElement {
           ? html`<span class="dots">
               ${rows.map(
                 (row, index) =>
-                  html`<span class="dot-row">
+                  html`<span class="dot-row ${index > 0 ? 'second' : ''}">
                     ${row.map(
                       (id) => html`<i class="dot" style="--c:${context.colors.get(id) ?? ''}"></i>`,
                     )}
                     ${
                       more > 0 && index === rows.length - 1
-                        ? html`<span class="more">+${more}</span>`
+                        ? html`<span class="more"></span>`
                         : nothing
                     }
                   </span>`,
@@ -250,7 +254,7 @@ export class EventideCard extends LitElement {
     const { todayKey, language } = context
     const anchorKey = this.anchor ?? todayKey
     const { dedupe } = context.config
-    const events = dedupe ? dedupeEvents(this.#feed.events) : this.#feed.events
+    const events = dedupe ? dedupeEvents(context.gridEvents) : context.gridEvents
     const options = { firstWeekday, todayKey, events }
     const cells =
       view === 'week'
@@ -302,13 +306,13 @@ export class EventideCard extends LitElement {
 
   #timeText(item: AgendaItem, context: RenderContext): string {
     const { event } = item
-    if (item.fill === null) return context.strings.allDay
+    if (item.fill === null) return labelOf(context.translation, 'all_day')
     const [start, end] = [event.startMs, event.endMs].map((ms) => context.clock.format(ms))
     return `${start}–${end}`
   }
 
   #row(item: AgendaItem, context: RenderContext): TemplateResult {
-    const { config, language, strings, todayKey, colors } = context
+    const { config, language, todayKey, colors } = context
     const { event, phase, fill } = item
     const rule = applyRules(config.rules, event.summary)
     const base = colors.get(event.calendarId) ?? 'var(--primary-color)'
@@ -318,9 +322,13 @@ export class EventideCard extends LitElement {
       calendar?.name ??
       this.hass?.states[event.calendarId]?.attributes.friendly_name ??
       event.calendarId
-    const percent = Math.round((fill ?? 0) * 1000) / 10
-    const eta = showsEta(item, todayKey, config.lingerMs) ? etaLines(item, strings) : []
-    return html`<div class="row ${phase}" style="--c:${color}">
+    const percent = event.cancelled ? 0 : Math.round((fill ?? 0) * 1000) / 10
+    const eta = event.cancelled
+      ? labelOf(context.translation, 'cancelled')
+      : showsEta(item, todayKey, config.lingerMs)
+        ? etaText(item, language, context.translation)
+        : ''
+    return html`<div class="row ${event.cancelled ? 'cancelled' : phase}" style="--c:${color}">
       ${percent > 0 ? html`<div class="fill" style="width:${percent}%"></div>` : nothing}
       <div class="tile">
         <small>${weekdayShort(event.startDay, language)}</small>
@@ -333,17 +341,13 @@ export class EventideCard extends LitElement {
         </div>
         <div class="sub">${this.#timeText(item, context)} · ${name}</div>
       </div>
-      ${
-        eta.length > 0
-          ? html`<div class="eta">${eta.map((line) => html`<div>${line}</div>`)}</div>`
-          : nothing
-      }
+      ${eta ? html`<div class="eta">${eta}</div>` : nothing}
     </div>`
   }
 
   #group(group: AgendaGroup, context: RenderContext): TemplateResult {
-    const { todayKey, language } = context
-    const title = groupTitle(group.dayKey, todayKey, addDays(todayKey, 1), language)
+    const { todayKey, language, translation } = context
+    const title = groupTitle(group.dayKey, todayKey, addDays(todayKey, 1), language, translation)
     return html`<div class="group">${title}</div>
       ${[...group.allDay, ...group.timed].map((item) => this.#row(item, context))}`
   }
@@ -353,7 +357,10 @@ export class EventideCard extends LitElement {
     if (!hass || !config) return nothing
     const timeZone = hass.config.time_zone
     const language = hass.locale.language
+    const marked = markCancelled(this.#feed.events, config.cancelledPattern)
+    const gridEvents = marked.filter((event) => !event.cancelled)
     const context: RenderContext = {
+      gridEvents,
       config,
       language,
       todayKey: dayKeyOf(this.now, timeZone),
@@ -361,11 +368,11 @@ export class EventideCard extends LitElement {
         { ...hass.locale, time_format: config.timeFormat ?? hass.locale.time_format ?? 'language' },
         timeZone,
       ),
-      strings: stringsFor(language),
+      translation: resolveTranslation(language, config.translations),
       colors: new Map(config.calendars.map(({ entity, color }) => [entity, color])),
     }
     const picked = this.selected ?? undefined
-    const agenda = buildAgenda(this.#feed.events, {
+    const agenda = buildAgenda(config.showCancelled ? marked : gridEvents, {
       nowMs: this.now,
       timeZone,
       leadMs: config.leadMs,
@@ -397,7 +404,7 @@ export class EventideCard extends LitElement {
             agenda.length > 0
               ? agenda.map((group) => this.#group(group, context))
               : html`<div class="empty">
-                  ${picked ? context.strings.freeDay : context.strings.empty}
+                  ${labelOf(context.translation, picked ? 'free_day' : 'empty')}
                 </div>`
           }
         </div>

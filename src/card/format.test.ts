@@ -5,7 +5,10 @@ import {
   clockFormatter,
   dayBackground,
   dotsOf,
-  etaLines,
+  etaText,
+  interpolate,
+  labelOf,
+  resolveTranslation,
   fadeEdges,
   groupTitle,
   monthTitle,
@@ -13,7 +16,6 @@ import {
   seriesColor,
   seriesShift,
   showsEta,
-  stringsFor,
 } from './format.ts'
 
 const MIN = 60_000
@@ -30,28 +32,90 @@ function item(overrides: Partial<AgendaItem>, startDay = '2026-11-09'): AgendaIt
   }
 }
 
-describe('etaLines', () => {
-  const uk = stringsFor('uk')
-
+describe('etaText', () => {
   test.each([
-    ['rounds a start up', { phase: 'soon', msUntilStart: 21.5 * MIN }, ['за', '22 хв']],
-    ['never says zero', { phase: 'soon', msUntilStart: 1000 }, ['за', '1 хв']],
-    ['hours and minutes', { phase: 'later', msUntilStart: 232 * MIN }, ['за', '3 год 52 хв']],
-    ['whole hours', { phase: 'later', msUntilStart: 120 * MIN }, ['за', '2 год']],
-    ['running', { phase: 'running', msUntilEnd: 6.2 * MIN }, ['залишилось', '7 хв']],
-    ['finished', { phase: 'finished', msSinceEnd: 12.9 * MIN }, ['закінчилось', '12 хв тому']],
-    ['just finished', { phase: 'finished', msSinceEnd: 20_000 }, ['щойно']],
-  ] as const)('%s', (_name, overrides, lines) => {
-    expect(etaLines(item(overrides), uk)).toEqual([...lines])
+    ['rounds a start up', { phase: 'soon', msUntilStart: 21.5 * MIN }, 'через 22 хв'],
+    ['never says zero', { phase: 'soon', msUntilStart: 1000 }, 'через 1 хв'],
+    ['rounds far starts to hours', { phase: 'later', msUntilStart: 232 * MIN }, 'через 4 год'],
+    ['turns 60 minutes into an hour', { phase: 'soon', msUntilStart: 59.5 * MIN }, 'через 1 год'],
+    ['running in minutes', { phase: 'running', msUntilEnd: 6.2 * MIN }, '7 хв'],
+    ['running in hours and minutes', { phase: 'running', msUntilEnd: 90 * MIN }, '1 год 30 хв'],
+    ['running in whole hours', { phase: 'running', msUntilEnd: 120 * MIN }, '2 год'],
+    ['finished', { phase: 'finished', msSinceEnd: 12.9 * MIN }, '12 хв тому'],
+    ['just finished', { phase: 'finished', msSinceEnd: 20_000 }, '1 хв тому'],
+  ] as const)('%s', (_name, overrides, text) => {
+    expect(etaText(item(overrides), 'uk')).toBe(text)
   })
 
-  test('falls back to English and handles regional tags', () => {
-    expect(etaLines(item({ phase: 'soon', msUntilStart: 5 * MIN }), stringsFor('de'))).toEqual([
-      'in 5 min',
-    ])
-    expect(stringsFor('uk-UA').today).toBe('Сьогодні')
-    expect(stringsFor('ru').today).toBe('Today')
-    expect(stringsFor('uk').today).toBe('Сьогодні')
+  test('follows the language without a dictionary', () => {
+    expect(etaText(item({ phase: 'soon', msUntilStart: 5 * MIN }), 'de')).toBe('in 5 Min.')
+  })
+})
+
+describe('English defaults', () => {
+  test.each([
+    ['hours and minutes ahead', { phase: 'later', msUntilStart: 232 * MIN }, 'in 3 h 52 min'],
+    ['minutes ahead', { phase: 'soon', msUntilStart: 21.5 * MIN }, 'in 22 min'],
+    ['running', { phase: 'running', msUntilEnd: 6.2 * MIN }, '7 min left'],
+    ['running long', { phase: 'running', msUntilEnd: 90 * MIN }, '1 h 30 min left'],
+    ['finished', { phase: 'finished', msSinceEnd: 23.5 * MIN }, 'ended 23 min ago'],
+    ['just finished', { phase: 'finished', msSinceEnd: 20_000 }, 'just ended'],
+  ] as const)('%s', (_name, overrides, text) => {
+    expect(etaText(item(overrides), 'en')).toBe(text)
+    expect(etaText(item(overrides), 'en-GB')).toBe(text)
+  })
+})
+
+describe('custom translations', () => {
+  const lt = resolveTranslation('lt', {
+    lt: {
+      today: 'Šiandien',
+      all_day: 'Visą dieną',
+      starts_in: 'po {time}',
+      time_left: 'liko {time}',
+      ended_ago: 'baigėsi prieš {time}',
+      minutes: '{n} min.',
+      hours: '{n} val.',
+    },
+  })
+
+  test.each([
+    [{ phase: 'later', msUntilStart: 232 * MIN }, 'po 3 val. 52 min.'],
+    [{ phase: 'running', msUntilEnd: 7 * MIN }, 'liko 7 min.'],
+    [{ phase: 'finished', msSinceEnd: 23 * MIN }, 'baigėsi prieš 23 min.'],
+  ] as const)('%j', (overrides, text) => {
+    expect(etaText(item(overrides), 'lt', lt)).toBe(text)
+  })
+
+  test('a partial translation keeps the browser for the rest', () => {
+    const partial = resolveTranslation('uk', { uk: { time_left: 'ще {time}' } })
+    expect(etaText(item({ phase: 'running', msUntilEnd: 7 * MIN }), 'uk', partial)).toBe('ще 7 хв')
+    expect(etaText(item({ phase: 'soon', msUntilStart: 5 * MIN }), 'uk', partial)).toBe(
+      'через 5 хв',
+    )
+  })
+
+  test('a regional override beats the language, and English can be changed', () => {
+    const custom = { pt: { today: 'Hoje' }, 'pt-br': { today: 'Hoje!' } }
+    expect(resolveTranslation('pt', custom).today).toBe('Hoje')
+    expect(resolveTranslation('pt-BR', custom).today).toBe('Hoje!')
+    expect(resolveTranslation('en', { en: { minutes: '{n}m' } }).minutes).toBe('{n}m')
+    expect(resolveTranslation('en', { en: { minutes: '{n}m' } }).hours).toBe('{n} h')
+  })
+
+  test('groups use a custom today and the browser otherwise', () => {
+    expect(groupTitle('2026-11-09', '2026-11-09', '2026-11-10', 'lt', lt)).toBe('Šiandien')
+    expect(groupTitle('2026-11-10', '2026-11-09', '2026-11-10', 'lt', lt)).toBe('Rytoj')
+  })
+
+  test('labels fall back to English', () => {
+    expect(labelOf(lt, 'all_day')).toBe('Visą dieną')
+    expect(labelOf(lt, 'empty')).toBe('Nothing coming up')
+    expect(labelOf(resolveTranslation('uk-UA'), 'all_day')).toBe('Весь день')
+  })
+
+  test('interpolation leaves unknown placeholders alone', () => {
+    expect(interpolate('{a} and {b}', { a: 1 })).toBe('1 and {b}')
   })
 })
 
@@ -82,6 +146,8 @@ describe('titles and clocks', () => {
     expect(title('2026-11-09')).toBe('Today')
     expect(title('2026-11-10')).toBe('Tomorrow')
     expect(title('2026-11-12')).toContain('Thursday')
+    expect(groupTitle('2026-11-09', '2026-11-09', '2026-11-10', 'uk')).toBe('Сьогодні')
+    expect(groupTitle('2026-11-10', '2026-11-09', '2026-11-10', 'de')).toBe('Morgen')
   })
 
   test('formats the clock in the given zone and format', () => {
@@ -108,9 +174,10 @@ describe('hour cycles and dots', () => {
     [1, [1], 0],
     [3, [3], 0],
     [4, [3, 1], 0],
-    [6, [3, 3], 0],
-    [7, [3, 2], 2],
-    [12, [3, 2], 7],
+    [5, [3, 2], 0],
+    [6, [3, 1], 2],
+    [8, [3, 1], 4],
+    [12, [3, 1], 8],
   ])('%i events make rows %j and %i more', (count, rows, more) => {
     const result = dotsOf(Array.from({ length: count }, () => 'a'))
     expect(result.rows.map((row) => row.length)).toEqual(rows)

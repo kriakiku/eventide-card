@@ -109,6 +109,7 @@ export function normalizeEvent(raw: unknown, context: NormalizeContext): Normali
     summary: raw.summary,
     description: optionalText(raw.description),
     location: optionalText(raw.location),
+    cancelled: optionalText(raw.status)?.toLowerCase() === 'cancelled',
     ...span,
   }
 }

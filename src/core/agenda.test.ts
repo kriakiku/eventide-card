@@ -149,6 +149,58 @@ describe('linger', () => {
   })
 })
 
+describe('cancelled events', () => {
+  const cancelled = (summary: string, start: string, end: string) => ({
+    ...make(summary, start, end),
+    cancelled: true,
+  })
+  const HOUR = 3_600_000
+
+  test('today: visible until the start, gone from then on', () => {
+    const event = cancelled('off', today('13:00'), today('14:00'))
+    expect(shape(buildAgenda([event], base))).toEqual([['2026-11-08', [], ['off']]])
+    expect(buildAgenda([event], { ...base, nowMs: NOW + HOUR })).toEqual([])
+    expect(buildAgenda([event], { ...base, nowMs: NOW + 3 * HOUR })).toEqual([])
+  })
+
+  test('tomorrow: visible today and on through its start', () => {
+    const event = cancelled('off', tomorrow('09:00'), tomorrow('10:00'))
+    expect(shape(buildAgenda([event], base))).toEqual([['2026-11-09', [], ['off']]])
+    const nextMorning = { ...base, nowMs: Date.UTC(2026, 10, 9, 8) }
+    expect(shape(buildAgenda([event], nextMorning))).toEqual([['2026-11-09', [], ['off']]])
+  })
+
+  test('later than tomorrow stays hidden', () => {
+    const event = cancelled('off', '2026-11-10T09:00', '2026-11-10T10:00')
+    expect(buildAgenda([event], base)).toEqual([])
+  })
+
+  test('does not count toward the limit', () => {
+    const events = [
+      cancelled('off', today('13:00'), today('14:00')),
+      make('a', today('14:00'), today('15:00')),
+      make('b', today('16:00'), today('17:00')),
+      make('c', today('18:00'), today('19:00')),
+    ]
+    expect(shape(buildAgenda(events, { ...base, limit: 2 }))).toEqual([
+      ['2026-11-08', [], ['off', 'a', 'b']],
+    ])
+  })
+
+  test('a picked day shows them, even in the past', () => {
+    const event = cancelled('off', '2026-11-05T09:00', '2026-11-05T10:00')
+    expect(shape(buildAgenda([event], { ...base, day: '2026-11-05' }))).toEqual([
+      ['2026-11-05', [], ['off']],
+    ])
+    expect(buildAgenda([event], base)).toEqual([])
+  })
+
+  test('do not linger after the start', () => {
+    const event = cancelled('off', today('11:00'), today('11:30'))
+    expect(buildAgenda([event], base)).toEqual([])
+  })
+})
+
 describe('dedupe', () => {
   const fromA = make('sync', today('14:00'), today('15:00'), 'a')
   const fromB = make('sync', today('14:00'), today('15:00'), 'b')

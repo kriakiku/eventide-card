@@ -107,26 +107,46 @@ export const cardStyles = css`
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 5px;
   }
   .dot-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    height: 7px;
+    gap: 5px;
+    height: 8px;
+  }
+  .dot-row.second {
+    width: 21px;
+    justify-content: flex-start;
   }
   .dot {
-    width: 7px;
-    height: 7px;
+    flex: none;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--c);
   }
   .more {
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 7px;
+    flex: none;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 13px;
+    height: 13px;
+    margin: -2.5px;
     color: var(--secondary-text-color);
+  }
+  .more::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow:
+      -4.5px 0 currentColor,
+      4.5px 0 currentColor;
   }
   .day.today .dot {
     background: var(--text-primary-color, #fff);
@@ -277,15 +297,23 @@ export const cardStyles = css`
     font-weight: 600;
     line-height: 19px;
   }
-  .row.finished .tile {
+  .row.cancelled .summary span {
+    text-decoration: line-through;
+  }
+  .row.finished .tile,
+  .row.cancelled .tile {
     border-color: var(--divider-color);
   }
   .row.finished .tile b,
   .row.finished .summary,
-  .row.finished .eta {
+  .row.finished .eta,
+  .row.cancelled .tile b,
+  .row.cancelled .summary,
+  .row.cancelled .eta {
     color: var(--secondary-text-color);
   }
-  .row.finished .eta {
+  .row.finished .eta,
+  .row.cancelled .eta {
     font-weight: 400;
   }
   .empty {

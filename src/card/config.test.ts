@@ -43,6 +43,10 @@ describe('resolveConfig', () => {
     ['an unknown first weekday', { calendars, first_weekday: 'mon' }],
     ['an unknown time format', { calendars, time_format: 13 }],
     ['an empty today color', { calendars, today_color: '' }],
+    ['an unknown translation key', { calendars, translations: { lt: { todai: 'x' } } }],
+    ['a broken cancelled pattern', { calendars, cancelled_match: '[bad' }],
+    ['a non-text translation', { calendars, translations: { lt: { today: 1 } } }],
+    ['a translations list', { calendars, translations: { lt: 'x' } }],
   ])('rejects %s', (_name, config) => {
     expect(() => resolveConfig(config as never)).toThrow()
   })
@@ -59,6 +63,22 @@ describe('resolveConfig', () => {
       showClock: true,
       showNavigation: false,
     })
+  })
+
+  test('keeps translations under lower-case language tags', () => {
+    expect(resolveConfig({ calendars }).translations).toEqual({})
+    expect(
+      resolveConfig({ calendars, translations: { 'pt-BR': { today: 'Hoje' } } }).translations,
+    ).toEqual({ 'pt-br': { today: 'Hoje' } })
+  })
+
+  test('detects cancelled events by default and can be turned off', () => {
+    expect(resolveConfig({ calendars }).showCancelled).toBe(true)
+    expect(resolveConfig({ calendars }).cancelledPattern?.test('Canceled: x')).toBe(true)
+    expect(resolveConfig({ calendars, cancelled_match: '' }).cancelledPattern).toBeNull()
+    expect(
+      resolveConfig({ calendars, cancelled_match: '^off:' }).cancelledPattern?.test('OFF: x'),
+    ).toBe(true)
   })
 
   test('series colors are off by default', () => {

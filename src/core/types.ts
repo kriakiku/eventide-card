@@ -42,6 +42,7 @@ export interface NormalizedEvent {
   allDay: boolean
   startDay: string
   endDay: string
+  cancelled: boolean
 }
 
 export interface EventStatus {

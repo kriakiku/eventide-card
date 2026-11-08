@@ -6,71 +6,119 @@ export interface LocaleLike {
   first_weekday?: string
 }
 
-interface Strings {
-  today: string
-  tomorrow: string
-  allDay: string
-  empty: string
-  freeDay: string
-  justEnded: string
-  minutes: string
-  hours: string
-  until: (span: string) => string[]
-  left: (span: string) => string[]
-  ended: (span: string) => string[]
-}
+export const TRANSLATION_KEYS = [
+  'today',
+  'tomorrow',
+  'all_day',
+  'cancelled',
+  'empty',
+  'free_day',
+  'starts_in',
+  'time_left',
+  'ended_ago',
+  'just_ended',
+  'minutes',
+  'hours',
+] as const
 
-const EN: Strings = {
+export type TranslationKey = (typeof TRANSLATION_KEYS)[number]
+export type Translation = Partial<Record<TranslationKey, string>>
+export type Translations = Record<string, Translation>
+type LabelKey = 'all_day' | 'cancelled' | 'empty' | 'free_day'
+
+const EN: Required<Translation> = {
   today: 'Today',
   tomorrow: 'Tomorrow',
-  allDay: 'All day',
+  all_day: 'All day',
+  cancelled: 'Cancelled',
   empty: 'Nothing coming up',
-  freeDay: 'Nothing on this day',
-  justEnded: 'just ended',
-  minutes: 'min',
-  hours: 'h',
-  until: (span) => [`in ${span}`],
-  left: (span) => [`${span} left`],
-  ended: (span) => ['ended', `${span} ago`],
+  free_day: 'Nothing on this day',
+  starts_in: 'in {time}',
+  time_left: '{time} left',
+  ended_ago: 'ended {time} ago',
+  just_ended: 'just ended',
+  minutes: '{n} min',
+  hours: '{n} h',
 }
 
-const UK: Strings = {
-  today: 'Сьогодні',
-  tomorrow: 'Завтра',
-  allDay: 'Весь день',
+const UK: Translation = {
+  all_day: 'Весь день',
+  cancelled: 'Скасовано',
   empty: 'Найближчих подій немає',
-  freeDay: 'Цього дня вільно',
-  justEnded: 'щойно',
-  minutes: 'хв',
-  hours: 'год',
-  until: (span) => ['за', span],
-  left: (span) => ['залишилось', span],
-  ended: (span) => ['закінчилось', `${span} тому`],
+  free_day: 'Цього дня вільно',
 }
 
+const BUILT_IN: Translations = { en: EN, uk: UK }
 const MINUTE = 60_000
 
-export function stringsFor(language: string): Strings {
-  const prefix = language.toLowerCase().split('-')[0]
-  if (prefix === 'uk') return UK
-  return EN
+export function resolveTranslation(language: string, custom: Translations = {}): Translation {
+  const tag = language.toLowerCase()
+  const prefix = tag.split('-')[0] ?? tag
+  return { ...BUILT_IN[prefix], ...BUILT_IN[tag], ...custom[prefix], ...custom[tag] }
 }
 
-function formatSpan(minutes: number, strings: Strings): string {
-  if (minutes < 60) return `${minutes} ${strings.minutes}`
+export function labelOf(translation: Translation, key: LabelKey): string {
+  return translation[key] ?? EN[key]
+}
+
+export function interpolate(template: string, values: Record<string, string | number>): string {
+  return template.replaceAll(/\{(\w+)\}/g, (match, name: string) => String(values[name] ?? match))
+}
+
+function capitalize(text: string, language: string): string {
+  return text.charAt(0).toLocaleUpperCase(language) + text.slice(1)
+}
+
+function relativeDistance(minutes: number, sign: 1 | -1, language: string): string {
+  const format = new Intl.RelativeTimeFormat(language, { style: 'short' })
+  if (minutes < 60) return format.format(sign * minutes, 'minute')
+  return format.format(sign * Math.round(minutes / 60), 'hour')
+}
+
+function unitText(
+  value: number,
+  unit: 'minute' | 'hour',
+  language: string,
+  translation: Translation,
+): string {
+  const template = unit === 'minute' ? translation.minutes : translation.hours
+  if (template !== undefined) return interpolate(template, { n: value })
+  return new Intl.NumberFormat(language, { style: 'unit', unit, unitDisplay: 'short' }).format(
+    value,
+  )
+}
+
+function durationText(minutes: number, language: string, translation: Translation): string {
+  if (minutes < 60) return unitText(minutes, 'minute', language, translation)
+  const hours = unitText(Math.floor(minutes / 60), 'hour', language, translation)
   const rest = minutes % 60
-  const hours = `${Math.floor(minutes / 60)} ${strings.hours}`
-  return rest === 0 ? hours : `${hours} ${rest} ${strings.minutes}`
+  return rest === 0 ? hours : `${hours} ${unitText(rest, 'minute', language, translation)}`
 }
 
-export function etaLines(item: AgendaItem, strings: Strings): string[] {
-  if (item.phase === 'running')
-    return strings.left(formatSpan(Math.ceil(item.msUntilEnd / MINUTE), strings))
+export function etaText(
+  item: AgendaItem,
+  language: string,
+  translation: Translation = resolveTranslation(language),
+): string {
+  const time = (minutes: number) => durationText(minutes, language, translation)
+  if (item.phase === 'running') {
+    const left = time(Math.ceil(item.msUntilEnd / MINUTE))
+    return translation.time_left === undefined
+      ? left
+      : interpolate(translation.time_left, { time: left })
+  }
   if (item.phase === 'finished') {
     const minutes = Math.floor(item.msSinceEnd / MINUTE)
-    return minutes === 0 ? [strings.justEnded] : strings.ended(formatSpan(minutes, strings))
+    if (minutes === 0 && translation.just_ended !== undefined) return translation.just_ended
+    const ago = Math.max(1, minutes)
+    return translation.ended_ago === undefined
+      ? relativeDistance(ago, -1, language)
+      : interpolate(translation.ended_ago, { time: time(ago) })
   }
-  return strings.until(formatSpan(Math.ceil(item.msUntilStart / MINUTE), strings))
+  const until = Math.ceil(item.msUntilStart / MINUTE)
+  return translation.starts_in === undefined
+    ? relativeDistance(until, 1, language)
+    : interpolate(translation.starts_in, { time: time(until) })
 }
 
 export function showsEta(item: AgendaItem, todayKey: string, lingerMs: number): boolean {
@@ -99,7 +147,7 @@ export function monthTitle(dayKey: string, language: string): string {
     year: 'numeric',
     timeZone: 'UTC',
   }).format(utcOfDay(dayKey))
-  return title.charAt(0).toLocaleUpperCase(language) + title.slice(1)
+  return capitalize(title, language)
 }
 
 export function groupTitle(
@@ -107,17 +155,22 @@ export function groupTitle(
   todayKey: string,
   tomorrowKey: string,
   language: string,
+  translation: Translation = resolveTranslation(language),
 ): string {
-  const strings = stringsFor(language)
-  if (dayKey === todayKey) return strings.today
-  if (dayKey === tomorrowKey) return strings.tomorrow
+  const offset = [todayKey, tomorrowKey].indexOf(dayKey)
+  if (offset !== -1) {
+    const custom = offset === 0 ? translation.today : translation.tomorrow
+    if (custom !== undefined) return custom
+    const format = new Intl.RelativeTimeFormat(language, { numeric: 'auto' })
+    return capitalize(format.format(offset, 'day'), language)
+  }
   const title = new Intl.DateTimeFormat(language, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     timeZone: 'UTC',
   }).format(utcOfDay(dayKey))
-  return title.charAt(0).toLocaleUpperCase(language) + title.slice(1)
+  return capitalize(title, language)
 }
 
 function hourCycleOf(timeFormat: string | undefined): 'h12' | 'h23' | undefined {
@@ -165,13 +218,12 @@ export function fadeEdges(
   return { top: scrollTop > 1, bottom: scrollTop + clientHeight < scrollHeight - 1 }
 }
 
-const DOTS_PER_ROW = 3
-const MAX_DOTS = DOTS_PER_ROW * 2
+const DOTS_IN_FIRST_ROW = 3
+const MAX_DOTS = 5
 
 export function dotsOf(calendarIds: readonly string[]): { rows: string[][]; more: number } {
-  const fits = calendarIds.length <= MAX_DOTS
-  const shown = calendarIds.slice(0, fits ? MAX_DOTS : MAX_DOTS - 1)
-  const rows = [shown.slice(0, DOTS_PER_ROW), shown.slice(DOTS_PER_ROW)].filter(
+  const shown = calendarIds.length <= MAX_DOTS ? calendarIds : calendarIds.slice(0, MAX_DOTS - 1)
+  const rows = [shown.slice(0, DOTS_IN_FIRST_ROW), shown.slice(DOTS_IN_FIRST_ROW)].filter(
     (row) => row.length > 0,
   )
   return { rows, more: calendarIds.length - shown.length }

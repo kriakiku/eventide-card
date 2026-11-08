@@ -47,6 +47,7 @@ describe('wire shapes', () => {
     expect(normalizeEvent(restTimed, kyiv)).toEqual({
       key: expect.any(String),
       seriesId: expect.any(String),
+      cancelled: false,
       calendarId: 'calendar.work',
       summary: 'Standup',
       description: 'Daily',
@@ -67,6 +68,7 @@ describe('wire shapes', () => {
     expect(normalizeEvent(restAllDay, kyiv)).toEqual({
       key: expect.any(String),
       seriesId: expect.any(String),
+      cancelled: false,
       calendarId: 'calendar.work',
       summary: 'Holiday',
       description: null,
@@ -224,6 +226,22 @@ describe('malformed input is dropped', () => {
   test('non-string and empty optional fields become null', () => {
     const event = normalizeEvent({ start, end, summary: '', description: 4, location: '' }, kyiv)
     expect(event).toMatchObject({ summary: '', description: null, location: null })
+  })
+})
+
+describe('cancelled', () => {
+  const context = { calendarId: 'calendar.a', timeZone: 'UTC' }
+  const base = {
+    summary: 'x',
+    start: '2026-11-09T10:00:00+00:00',
+    end: '2026-11-09T11:00:00+00:00',
+  }
+
+  test('follows the status when Home Assistant sends one', () => {
+    expect(normalizeEvent({ ...base, status: 'cancelled' }, context)?.cancelled).toBe(true)
+    expect(normalizeEvent({ ...base, status: 'CANCELLED' }, context)?.cancelled).toBe(true)
+    expect(normalizeEvent({ ...base, status: 'confirmed' }, context)?.cancelled).toBe(false)
+    expect(normalizeEvent(base, context)?.cancelled).toBe(false)
   })
 })
 

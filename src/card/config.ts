@@ -1,7 +1,8 @@
+import { DEFAULT_CANCELLED_PATTERN } from '../core/cancelled.ts'
 import { DEFAULT_LEAD_MS, DEFAULT_LINGER_MS } from '../core/phase.ts'
 import { compileRules } from '../core/rules.ts'
 import type { CompiledRules, Rule } from '../core/types.ts'
-import { WEEKDAYS } from './format.ts'
+import { TRANSLATION_KEYS, WEEKDAYS, type Translation, type Translations } from './format.ts'
 
 export type View = 'auto' | 'month' | 'week' | 'none'
 
@@ -25,6 +26,9 @@ export interface EventideConfig {
   show_clock?: boolean
   show_navigation?: boolean
   series_colors?: boolean
+  translations?: Translations
+  show_cancelled?: boolean
+  cancelled_match?: string
   rules?: Rule[]
 }
 
@@ -47,6 +51,9 @@ export interface ResolvedConfig {
   showClock: boolean
   showNavigation: boolean
   seriesColors: boolean
+  translations: Translations
+  showCancelled: boolean
+  cancelledPattern: RegExp | null
   rules: CompiledRules
 }
 
@@ -74,6 +81,40 @@ function resolveCalendar(item: string | CalendarConfig, index: number): Resolved
     color: calendar.color ?? PALETTE[index % PALETTE.length] ?? '#7F77DD',
     ...(calendar.name === undefined ? {} : { name: calendar.name }),
   }
+}
+
+function resolveCancelledPattern(raw: unknown): RegExp | null {
+  if (raw === '') return null
+  if (raw !== undefined && typeof raw !== 'string') throw new Error('cancelled_match must be text')
+  try {
+    return new RegExp(raw ?? DEFAULT_CANCELLED_PATTERN, 'iu')
+  } catch {
+    throw new Error('cancelled_match is not a valid pattern')
+  }
+}
+
+function resolveTranslations(raw: unknown): Translations {
+  if (raw === undefined) return {}
+  if (typeof raw !== 'object' || raw === null) throw new Error('translations must be a map')
+  const resolved: Translations = {}
+  for (const [language, entries] of Object.entries(raw)) {
+    if (typeof entries !== 'object' || entries === null) {
+      throw new Error(`translations.${language} must be a map`)
+    }
+    const translation: Translation = {}
+    for (const [key, value] of Object.entries(entries)) {
+      const known = TRANSLATION_KEYS.find((name) => name === key)
+      if (!known) {
+        throw new Error(
+          `translations.${language}: unknown key ${key}, use ${TRANSLATION_KEYS.join(', ')}`,
+        )
+      }
+      if (typeof value !== 'string') throw new Error(`translations.${language}.${key} must be text`)
+      translation[known] = value
+    }
+    resolved[language.toLowerCase()] = translation
+  }
+  return resolved
 }
 
 export function resolveConfig(raw: EventideConfig): ResolvedConfig {
@@ -111,6 +152,9 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
     showClock: raw.show_clock ?? false,
     showNavigation: raw.show_navigation ?? true,
     seriesColors: raw.series_colors ?? false,
+    translations: resolveTranslations(raw.translations),
+    showCancelled: raw.show_cancelled ?? true,
+    cancelledPattern: resolveCancelledPattern(raw.cancelled_match),
     rules: compileRules(raw.rules ?? []),
   }
 }

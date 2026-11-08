@@ -1,5 +1,5 @@
 import { DEFAULT_LEAD_MS, DEFAULT_LINGER_MS, isSpanning, phaseOf } from './phase.ts'
-import { dayKeyOf } from './timezone.ts'
+import { addDays, dayKeyOf } from './timezone.ts'
 import type { AgendaGroup, AgendaOptions, NormalizedEvent } from './types.ts'
 
 function calendarRanks(events: readonly NormalizedEvent[]): Map<string, number> {
@@ -35,14 +35,19 @@ export function buildAgenda(
   } = options
   const linger = Math.max(0, lingerMs)
   const today = dayKeyOf(nowMs, timeZone)
+  const tomorrow = addDays(today, 1)
   const ranks = calendarRanks(events)
   const rankOf = (event: NormalizedEvent) => ranks.get(event.calendarId) ?? 0
 
   const live = events
     .filter((event) => {
       const { endMs, startDay, endDay } = event
+      const onPickedDay = day === undefined || (startDay <= day && day <= endDay)
+      if (event.cancelled) {
+        return onPickedDay && (day !== undefined || (nowMs < event.startMs && startDay <= tomorrow))
+      }
       const visibleUntil = isSpanning(event) ? endMs : endMs + linger
-      return nowMs < visibleUntil && (day === undefined || (startDay <= day && day <= endDay))
+      return nowMs < visibleUntil && onPickedDay
     })
     .toSorted((a, b) => a.startMs - b.startMs || rankOf(a) - rankOf(b))
   const unique = dedupe ? dedupeEvents(live) : live
@@ -52,7 +57,7 @@ export function buildAgenda(
     return event.startDay > today ? event.startDay : today
   }
 
-  const timed = unique.filter((event) => !isSpanning(event))
+  const timed = unique.filter((event) => !isSpanning(event) && !event.cancelled)
   const hasLimit = limit !== undefined && limit >= 0
   const kept = hasLimit ? timed.slice(0, limit) : timed
   const keptSet = new Set(kept)
@@ -63,7 +68,7 @@ export function buildAgenda(
   const groups = new Map<string, AgendaGroup>()
   for (const event of unique) {
     const spanning = isSpanning(event)
-    if (!spanning && !keptSet.has(event)) continue
+    if (!spanning && !event.cancelled && !keptSet.has(event)) continue
     const dayKey = groupDayOf(event)
     if (horizon !== null && dayKey > horizon) continue
 

@@ -79,7 +79,7 @@ A day with events is tinted in the color of its calendar. When several calendars
   <img src="docs/gradient.svg" alt="Seven days tinted by one, two, three and four calendars" width="560">
 </p>
 
-Each event also gets a dot in its calendar's color. Up to three dots sit in one row and up to six in two rows, and past that the card shows five dots and a small `+N`, so a busy day never reaches the edges of its cell.
+Each event also gets a dot in its calendar's color. Three dots sit in the first row, and the fourth and fifth tuck in between them below. Past five events, the fifth place becomes an ellipsis, so a busy day never reaches the edges of its cell.
 
 ## Colors for recurring events
 
@@ -88,6 +88,20 @@ Turn on `series_colors` to give each recurring event its own shade. The shade is
 <p align="center">
   <img src="docs/series.svg" alt="Event rows whose colors vary around the color of their calendar" width="480">
 </p>
+
+## Cancelled events
+
+A cancelled event stays visible for a while, so you know the slot is free, but it doesn't crowd the list. It's struck through, has no fill or countdown, and isn't counted in `limit` or in the calendar grid.
+
+<p align="center">
+  <img src="docs/cancelled.svg" alt="A cancelled event struck through between two other events" width="480">
+</p>
+
+It appears the day before and disappears when it would have started. Events further ahead stay hidden, and a day you pick in the grid shows everything.
+
+Outlook marks a cancelled meeting with a prefix in its title, such as `Canceled:`, and the card recognizes that in several languages. Use `cancelled_match` to set your own pattern, or set it to `""` to turn detection off, and use `show_cancelled: false` to hide these events.
+
+Home Assistant currently removes events with a cancelled status before they reach any card, so Google Calendar cancellations can't be shown.
 
 ## Optional clock
 
@@ -108,6 +122,58 @@ The core is pure TypeScript with no runtime dependencies. It's covered by tests 
 - **Overlaps:** events at the same time are all kept.
 - **Duplicates:** the same event in two calendars is shown once.
 - **Rules:** case-insensitive patterns set icons and colors by event title, including in Cyrillic. An invalid pattern is reported, not fatal.
+
+## Languages and translations
+
+The card follows the language of your Home Assistant profile.
+
+- **Weekdays and months** always come from the browser, in any language.
+- **English** uses its own wording, such as `in 3 h 52 min`, `7 min left` and `ended 23 min ago`.
+- **Other languages** use the browser for "today" and relative times, such as `через 4 год`. It only knows one unit at a time, so anything over an hour is rounded to hours.
+- **A few labels**, such as "All day", have no browser equivalent. They exist in English and Ukrainian and fall back to English elsewhere.
+
+You can replace any of this with the `translations` option, for one language or for several. Set only the keys you want to change and the rest keep their defaults. A key under `pt-BR` wins over the same key under `pt`.
+
+Here is a full translation into Lithuanian:
+
+```yaml
+type: custom:eventide-card
+calendars:
+  - calendar.work
+translations:
+  lt:
+    today: Šiandien
+    tomorrow: Rytoj
+    all_day: Visą dieną
+    cancelled: Atšaukta
+    empty: Artimiausių įvykių nėra
+    free_day: Šią dieną laisva
+    starts_in: po {time}
+    time_left: liko {time}
+    ended_ago: baigėsi prieš {time}
+    just_ended: ką tik baigėsi
+    minutes: '{n} min.'
+    hours: '{n} val.'
+```
+
+That gives `po 3 val. 52 min.`, `liko 7 min.` and `baigėsi prieš 23 min.`.
+
+| Key          | English             | Placeholder | Used for                          |
+| ------------ | ------------------- | ----------- | --------------------------------- |
+| `today`      | Today               |             | The heading for today's events    |
+| `tomorrow`   | Tomorrow            |             | The heading for tomorrow's events |
+| `all_day`    | All day             |             | The time of an all-day event      |
+| `cancelled`  | Cancelled           |             | A cancelled event                 |
+| `empty`      | Nothing coming up   |             | An empty agenda                   |
+| `free_day`   | Nothing on this day |             | A picked day with no events       |
+| `starts_in`  | in {time}           | `{time}`    | An event that hasn't started      |
+| `time_left`  | {time} left         | `{time}`    | A running event                   |
+| `ended_ago`  | ended {time} ago    | `{time}`    | A finished event                  |
+| `just_ended` | just ended          |             | Under a minute after the end      |
+| `minutes`    | {n} min             | `{n}`       | The minutes inside `{time}`       |
+| `hours`      | {n} h               | `{n}`       | The hours inside `{time}`         |
+
+Setting `starts_in` or `ended_ago` also switches that phrase to exact hours and minutes.
 
 ## Configuration
 
@@ -133,28 +199,31 @@ rules:
     color: '#E0704A'
 ```
 
-| Option            | Default         | Description                                                           |
-| ----------------- | --------------- | --------------------------------------------------------------------- |
-| `calendars`       | none            | The calendar entities to show, each with an optional `color`.         |
-| `view`            | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.            |
-| `lead_time`       | `60`            | Minutes before the start when the row begins to fill. `0` disables.   |
-| `linger`          | `30`            | Minutes a finished timed event stays in the list. `0` disables.       |
-| `limit`           | `5`             | How many timed events to show. Finished ones count.                   |
-| `dedupe`          | `true`          | Show an event found in several calendars only once.                   |
-| `first_weekday`   | your HA setting | First day of the week: `monday` to `sunday`, or `language`.           |
-| `time_format`     | your HA setting | `24`, `12` or `language`.                                             |
-| `today_color`     | theme primary   | The color of the current day in the grid.                             |
-| `show_clock`      | `false`         | Show the current time under the calendar.                             |
-| `show_navigation` | `true`          | Show the buttons that switch months or weeks.                         |
-| `series_colors`   | `false`         | Give each recurring event its own shade of the calendar color.        |
-| `rules`           | none            | Patterns that set `icon` and `color` by title, first match per field. |
+| Option            | Default         | Description                                                                                 |
+| ----------------- | --------------- | ------------------------------------------------------------------------------------------- |
+| `calendars`       | none            | The calendar entities to show, each with an optional `color`.                               |
+| `view`            | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.                                  |
+| `lead_time`       | `60`            | Minutes before the start when the row begins to fill. `0` disables.                         |
+| `linger`          | `30`            | Minutes a finished timed event stays in the list. `0` disables.                             |
+| `limit`           | `5`             | How many timed events to show. Finished ones count.                                         |
+| `dedupe`          | `true`          | Show an event found in several calendars only once.                                         |
+| `first_weekday`   | your HA setting | First day of the week: `monday` to `sunday`, or `language`.                                 |
+| `time_format`     | your HA setting | `24`, `12` or `language`.                                                                   |
+| `today_color`     | theme primary   | The color of the current day in the grid.                                                   |
+| `show_clock`      | `false`         | Show the current time under the calendar.                                                   |
+| `show_navigation` | `true`          | Show the buttons that switch months or weeks.                                               |
+| `series_colors`   | `false`         | Give each recurring event its own shade of the calendar color.                              |
+| `translations`    | none            | Custom wording per language, see [Languages and translations](#languages-and-translations). |
+| `show_cancelled`  | `true`          | Show recognized cancelled events.                                                           |
+| `cancelled_match` | common prefixes | The pattern that marks an event as cancelled, `""` to turn it off.                          |
+| `rules`           | none            | Patterns that set `icon` and `color` by title, first match per field.                       |
 
 ## Roadmap
 
 - [x] Time and state core with tests
 - [x] Live data from Home Assistant, with a REST fallback
 - [x] The card: month grid, week strip, agenda and responsive layouts
-- [x] Translations (English, Ukrainian)
+- [x] Any language through the browser, with custom translations
 - [ ] First release
 - [ ] Visual editor
 - [ ] HACS support
