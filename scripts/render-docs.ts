@@ -1,7 +1,18 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { dotsOf, etaText, seriesShift } from '../src/card/format.ts'
+import {
+  dayOfMonth,
+  dotsOf,
+  etaText,
+  groupTitle,
+  labelOf,
+  monthTitle,
+  resolveTranslation,
+  seriesShift,
+  weekdayShort,
+  type Translation,
+} from '../src/card/format.ts'
 import {
   buildAgenda,
   buildMonthGrid,
@@ -20,7 +31,7 @@ const MIN = 60_000
 const WORK = '#7F77DD'
 const HOME = '#E0704A'
 const ACCENT = '#5B50C8'
-const ROW_H = 64
+const ROW_H = 72
 const ROW_GAP = 8
 const COLORS: Record<string, string> = {
   work: WORK,
@@ -29,8 +40,40 @@ const COLORS: Record<string, string> = {
   sport: '#D4537E',
 }
 const LABELS: Record<string, string> = { work: 'Work', home: 'Personal' }
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const CORNER_EXPONENT = 2 ** 1.6
+
+interface Locale {
+  language: string
+  translation: Translation
+  calendarNames: Record<string, string>
+}
+
+const ENGLISH: Locale = {
+  language: 'en',
+  translation: resolveTranslation('en'),
+  calendarNames: LABELS,
+}
+
+const LITHUANIAN: Locale = {
+  language: 'lt',
+  translation: resolveTranslation('lt', {
+    lt: {
+      today: 'Šiandien',
+      tomorrow: 'Rytoj',
+      all_day: 'Visą dieną',
+      cancelled: 'Atšaukta',
+      empty: 'Artimiausių įvykių nėra',
+      free_day: 'Šią dieną laisva',
+      starts_in: 'po {time}',
+      time_left: 'liko {time}',
+      ended_ago: 'baigėsi prieš {time}',
+      just_ended: 'ką tik baigėsi',
+      minutes: '{n} min.',
+      hours: '{n} val.',
+    },
+  }),
+  calendarNames: { work: 'Darbas', home: 'Asmeninis' },
+}
 
 const STYLE = `<style>
   text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
@@ -95,8 +138,8 @@ const events = [
   ...fixture('home', 'Four', 5, '12:00', '12:30'),
 ]
 
-const agendaItems = (): AgendaItem[] =>
-  buildAgenda(events, { nowMs: NOW, timeZone: ZONE, limit: 5 }).flatMap((group) => group.timed)
+const agendaItems = (source: NormalizedEvent[]): AgendaItem[] =>
+  buildAgenda(source, { nowMs: NOW, timeZone: ZONE, limit: 5 }).flatMap((group) => group.timed)
 
 const escapeXml = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -104,79 +147,127 @@ const escapeXml = (value: string) =>
 const text = (x: number, y: number, cls: string, size: number, value: string, attrs = '') =>
   `<text x="${x}" y="${y}" class="${cls}" font-size="${size}" ${attrs}>${escapeXml(value)}</text>`
 
+const signedPower = (value: number) => Math.sign(value) * Math.abs(value) ** (2 / CORNER_EXPONENT)
+
+function rounded(x: number, y: number, width: number, height: number, radius: number, attrs = '') {
+  const corners: Array<[number, number, number]> = [
+    [x + width - radius, y + radius, -90],
+    [x + width - radius, y + height - radius, 0],
+    [x + radius, y + height - radius, 90],
+    [x + radius, y + radius, 180],
+  ]
+  const points = corners.flatMap(([cx, cy, from]) =>
+    Array.from({ length: 13 }, (_, step) => {
+      const angle = ((from + (step / 12) * 90) * Math.PI) / 180
+      const px = cx + radius * signedPower(Math.cos(angle))
+      const py = cy + radius * signedPower(Math.sin(angle))
+      return `${px.toFixed(2)} ${py.toFixed(2)}`
+    }),
+  )
+  return `<path d="M${points.join('L')}Z" ${attrs}/>`
+}
+
 const clock = (ms: number) => new Date(ms).toISOString().slice(11, 16)
 
 let clipId = 0
+
+const fit = (value: string, size: number, maxWidth: number) => {
+  const chars = Math.floor(maxWidth / (size * 0.56))
+  return value.length <= chars ? value : `${value.slice(0, Math.max(1, chars - 1)).trimEnd()}…`
+}
 
 function renderRow(
   item: AgendaItem,
   x: number,
   y: number,
   width: number,
-  color = COLORS[item.event.calendarId] ?? WORK,
+  options: { color?: string; locale?: Locale } = {},
 ): string {
   const { event, phase } = item
+  const color = options.color ?? COLORS[event.calendarId] ?? WORK
+  const locale = options.locale ?? ENGLISH
   const finished = phase === 'finished' || event.cancelled
   const fillWidth = Math.round((item.fill ?? 0) * width)
   const id = `row${clipId++}`
-  const date = new Date(event.startMs)
+  const eta = event.cancelled
+    ? labelOf(locale.translation, 'cancelled')
+    : etaText(item, locale.language, locale.translation)
+  const textWidth = width - 72 - 14 - eta.length * 15 * 0.54 - 10
   const parts = [
-    `<clipPath id="${id}"><rect x="${x}" y="${y}" width="${width}" height="${ROW_H}" rx="16"/></clipPath>`,
-    `<rect x="${x}" y="${y}" width="${width}" height="${ROW_H}" rx="16" class="row"/>`,
+    `<clipPath id="${id}">${rounded(x, y, width, ROW_H, 20)}</clipPath>`,
+    rounded(x, y, width, ROW_H, 20, 'class="row"'),
   ]
   if (fillWidth > 0) {
     parts.push(
-      `<rect x="${x}" y="${y}" width="${fillWidth}" height="${ROW_H}" fill="${color}" opacity="0.28" clip-path="url(#${id})"/>`,
+      `<rect x="${x}" y="${y}" width="${fillWidth}" height="${ROW_H}" fill="${color}" opacity="0.3" clip-path="url(#${id})"/>`,
     )
   }
   if (phase === 'soon' || phase === 'running') {
     const dash = phase === 'soon' ? ' stroke-dasharray="5 4"' : ''
     parts.push(
-      `<rect x="${x + 0.75}" y="${y + 0.75}" width="${width - 1.5}" height="${ROW_H - 1.5}" rx="15.25" fill="none" stroke="${color}" stroke-width="1.5"${dash}/>`,
+      rounded(
+        x + 0.75,
+        y + 0.75,
+        width - 1.5,
+        ROW_H - 1.5,
+        19.25,
+        `fill="none" stroke="${color}" stroke-width="1.5"${dash}`,
+      ),
     )
   }
   const tileX = x + 10
   const tileY = y + 9
   parts.push(
-    `<rect x="${tileX}" y="${tileY}" width="42" height="46" rx="11" class="tile" stroke="${finished ? '#9C99A8' : color}" stroke-width="1.5"/>`,
+    rounded(
+      tileX,
+      tileY,
+      48,
+      54,
+      14,
+      `class="tile" stroke="${finished ? '#9C99A8' : color}" stroke-width="1.5"`,
+    ),
     text(
-      tileX + 21,
+      tileX + 24,
       tileY + 15,
       't2',
-      11,
-      SHORT_DAYS[date.getUTCDay()] ?? '',
+      13,
+      weekdayShort(event.startDay, locale.language),
       'text-anchor="middle"',
     ),
-    `<line x1="${tileX + 1}" x2="${tileX + 41}" y1="${tileY + 20}" y2="${tileY + 20}" class="rule"/>`,
+    `<line x1="${tileX + 1}" x2="${tileX + 47}" y1="${tileY + 21}" y2="${tileY + 21}" class="rule"/>`,
     text(
-      tileX + 21,
-      tileY + 38,
+      tileX + 24,
+      tileY + 44,
       finished ? 't3' : 't1',
-      16,
-      String(date.getUTCDate()),
+      19,
+      String(dayOfMonth(event.startDay)),
       'text-anchor="middle" font-weight="600"',
     ),
     text(
-      x + 66,
-      y + 28,
+      x + 72,
+      y + 32,
       finished ? 't3' : 't1',
-      15,
-      event.summary,
+      19,
+      fit(event.summary, 19, textWidth),
       `font-weight="600"${event.cancelled ? ' text-decoration="line-through"' : ''}`,
     ),
     text(
-      x + 66,
-      y + 47,
+      x + 72,
+      y + 54,
       't2',
-      12.5,
-      `${clock(event.startMs)}–${clock(event.endMs)} · ${LABELS[event.calendarId] ?? ''}`,
+      15,
+      fit(
+        `${clock(event.startMs)}–${clock(event.endMs)} · ${locale.calendarNames[event.calendarId] ?? ''}`,
+        15,
+        textWidth,
+      ),
     ),
     text(
       x + width - 14,
-      y + 37,
+      y + 41,
       finished ? 't3' : 't1',
-      12.5,
-      event.cancelled ? 'Cancelled' : etaText(item, 'en'),
+      15,
+      eta,
       `text-anchor="end" font-weight="${finished ? 400 : 600}"`,
     ),
   )
@@ -190,19 +281,27 @@ function renderCells(
   cellW: number,
   cellH: number,
   scale = 1,
+  language = 'en',
 ): string {
-  const parts = WEEKDAYS.map((day, index) =>
-    text(x + cellW * index + cellW / 2, y + 12, 't3', 11.5, day, 'text-anchor="middle"'),
-  )
+  const parts = cells
+    .slice(0, 7)
+    .map(({ dayKey }, index) =>
+      text(
+        x + cellW * index + cellW / 2,
+        y + 12,
+        't3',
+        13.5,
+        weekdayShort(dayKey, language),
+        'text-anchor="middle"',
+      ),
+    )
   cells.forEach((cell, index) => {
     const column = index % 7
     const row = Math.floor(index / 7)
     const cx = x + column * cellW
     const cy = y + 24 + row * cellH
     if (cell.isToday) {
-      parts.push(
-        `<rect x="${cx + 3}" y="${cy + 3}" width="${cellW - 6}" height="${cellH - 6}" rx="12" fill="${ACCENT}"/>`,
-      )
+      parts.push(rounded(cx + 3, cy + 3, cellW - 6, cellH - 6, 15, `fill="${ACCENT}"`))
     }
     const cls = cell.isToday ? 'on' : cell.inMonth ? 't1' : 't3'
     const weight = cell.isToday ? ' font-weight="600"' : ''
@@ -211,7 +310,7 @@ function renderCells(
         cx + cellW / 2,
         cy + cellH / 2 - 5 * scale,
         cls,
-        14 * scale,
+        18 * scale,
         String(Number(cell.dayKey.slice(8))),
         `text-anchor="middle"${weight}`,
       ),
@@ -231,26 +330,26 @@ function renderCells(
         )
       }
       const paint = colors.length > 1 ? `url(#${gradientId})` : colors[0]
-      parts.push(
-        `<rect x="${cx + 3}" y="${cy + 3}" width="${cellW - 6}" height="${cellH - 6}" rx="12" fill="${paint}" opacity="0.26"/>`,
-      )
+      parts.push(rounded(cx + 3, cy + 3, cellW - 6, cellH - 6, 15, `fill="${paint}" opacity="0.3"`))
     }
     const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     rows.forEach((dotRow, rowIndex) => {
-      const dotY = cy + cellH / 2 + (6 + rowIndex * 9.5) * scale
+      const dotY = cy + cellH / 2 + (9 + rowIndex * 11.5) * scale
       const center = cx + cellW / 2
-      const step = 10 * scale
+      const step = 11.5 * scale
       dotRow.forEach((id, dot) => {
         const offset = rowIndex === 0 ? (dot - (dotRow.length - 1) / 2) * step : (dot - 0.5) * step
         const fill = cell.isToday ? '#FFFFFF' : (COLORS[id] ?? WORK)
-        parts.push(`<circle cx="${center + offset}" cy="${dotY}" r="${3 * scale}" fill="${fill}"/>`)
+        parts.push(
+          `<circle cx="${center + offset}" cy="${dotY}" r="${3.6 * scale}" fill="${fill}"/>`,
+        )
       })
       if (more > 0 && rowIndex === rows.length - 1) {
         const slot = center + step / 2
         parts.push(
           ...[-1, 0, 1].map(
             (side) =>
-              `<circle cx="${slot + side * 2.8 * scale}" cy="${dotY}" r="${0.9 * scale}" class="${cell.isToday ? 'on' : 't2'}"/>`,
+              `<circle cx="${slot + side * 3.6 * scale}" cy="${dotY}" r="${1.2 * scale}" class="${cell.isToday ? 'on' : 't2'}"/>`,
           ),
         )
       }
@@ -262,58 +361,100 @@ function renderCells(
 const svg = (width: number, height: number, label: string, body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeXml(label)}">${STYLE}${body}</svg>\n`
 
-function renderList(items: AgendaItem[], x: number, y: number, width: number): string {
+function renderList(
+  items: AgendaItem[],
+  x: number,
+  y: number,
+  width: number,
+  locale: Locale = ENGLISH,
+): string {
+  const title = groupTitle(
+    '2026-11-09',
+    '2026-11-09',
+    '2026-11-10',
+    locale.language,
+    locale.translation,
+  )
   return [
-    text(x, y + 14, 't2', 13, 'Today'),
-    ...items.map((item, index) => renderRow(item, x, y + 26 + index * (ROW_H + ROW_GAP), width)),
+    text(x, y + 14, 't2', 16, title),
+    ...items.map((item, index) =>
+      renderRow(item, x, y + 28 + index * (ROW_H + ROW_GAP), width, { locale }),
+    ),
   ].join('')
 }
 
-function hero(): string {
+function monthCard(source: NormalizedEvent[], locale: Locale, label: string): string {
   const width = 880
-  const items = agendaItems()
+  const items = agendaItems(source)
   const cells = buildMonthGrid({
     year: 2026,
     month: 11,
     firstWeekday: 1,
     todayKey: '2026-11-09',
-    events,
+    events: source.filter((event) => !event.cancelled),
   })
   const listX = 424
-  const height = 26 + 26 + items.length * (ROW_H + ROW_GAP) - ROW_GAP + 26 + 4
-  const cellH = (height - 24 - 44 - 24 - 24) / (cells.length / 7)
+  const height = 26 + 28 + items.length * (ROW_H + ROW_GAP) - ROW_GAP + 26
+  const cellH = (height - 94 - 24) / (cells.length / 7)
   return svg(
     width,
     height,
-    'Eventide card: month grid next to an agenda with a finished, a running and an upcoming event',
+    label,
     [
-      `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
-      text(28, 46, 't1', 18, 'November 2026', 'font-weight="600"'),
-      renderCells(cells, 24, 66, 52, cellH),
-      renderList(items, listX, 26, width - listX - 26),
+      rounded(0.5, 0.5, width - 1, height - 1, 24, 'class="card"'),
+      text(28, 50, 't1', 24, monthTitle('2026-11-09', locale.language), 'font-weight="600"'),
+      renderCells(cells, 24, 70, 52, cellH, 1, locale.language),
+      renderList(items, listX, 26, width - listX - 26, locale),
     ].join(''),
+  )
+}
+
+function hero(): string {
+  return monthCard(
+    events,
+    ENGLISH,
+    'Eventide card: month grid next to an agenda with a finished, a running and an upcoming event',
+  )
+}
+
+function lithuanian(): string {
+  const today = [
+    ...fixture('work', 'Rytinis susirinkimas', 9, '09:15', '09:45'),
+    ...fixture('work', 'Kasdienis susitikimas', 9, '10:00', '10:15'),
+    ...fixture('work', 'Sprinto demonstracija', 9, '10:30', '11:30'),
+    ...fixture('work', 'Biudžeto peržiūra', 9, '13:00', '14:00').map((event) => ({
+      ...event,
+      cancelled: true,
+    })),
+    ...fixture('home', 'Anglų kalbos pamoka', 9, '14:00', '15:00'),
+    ...fixture('home', 'Odontologas', 9, '17:00', '17:45'),
+  ]
+  return monthCard(
+    [...today, ...events.filter((event) => event.startDay !== '2026-11-09')],
+    LITHUANIAN,
+    'Eventide card translated into Lithuanian',
   )
 }
 
 function panel(): string {
   const width = 360
-  const items = agendaItems()
+  const items = agendaItems(events)
   const cells = buildWeekGrid({
     anchorKey: '2026-11-09',
     firstWeekday: 1,
     todayKey: '2026-11-09',
     events,
   })
-  const listY = 142
-  const height = listY + 26 + items.length * (ROW_H + ROW_GAP) - ROW_GAP + 20
+  const listY = 158
+  const height = listY + 28 + items.length * (ROW_H + ROW_GAP) - ROW_GAP + 20
   return svg(
     width,
     height,
     'Eventide card in a narrow layout: a week strip above the agenda',
     [
-      `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
-      text(20, 40, 't1', 17, 'This week', 'font-weight="600"'),
-      renderCells(cells, 18, 58, 46, 50),
+      rounded(0.5, 0.5, width - 1, height - 1, 24, 'class="card"'),
+      text(20, 42, 't1', 20, 'This week', 'font-weight="600"'),
+      renderCells(cells, 18, 58, 46, 62),
       renderList(items, 16, listY, width - 32),
     ].join(''),
   )
@@ -334,7 +475,7 @@ function states(): string {
   const body = samples.map(([label, now], index) => {
     const y = 10 + index * (ROW_H + ROW_GAP)
     return (
-      text(0, y + 37, 't2', 13, label, 'font-weight="600"') +
+      text(0, y + 41, 't2', 13, label, 'font-weight="600"') +
       renderRow({ event, ...phaseOf(event, now) }, 84, y, width - 84)
     )
   })
@@ -375,7 +516,7 @@ function gradientPreview(): string {
     'Days tinted by one, two, three and four calendars',
     [
       `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
-      renderCells(cells, 20, 20, cellW, cellH, 1.5),
+      renderCells(cells, 20, 20, cellW, cellH, 1.25),
     ].join(''),
   )
 }
@@ -429,7 +570,9 @@ function seriesPreview(): string {
   const body = series.map((event, index) => {
     const base = COLORS[event.calendarId] ?? WORK
     const color = rotateHue(base, seriesShift(event.seriesId))
-    return renderRow({ event, ...phaseOf(event, NOW) }, 0, index * (ROW_H + ROW_GAP), width, color)
+    return renderRow({ event, ...phaseOf(event, NOW) }, 0, index * (ROW_H + ROW_GAP), width, {
+      color,
+    })
   })
   const height = series.length * (ROW_H + ROW_GAP) - ROW_GAP
   return svg(
@@ -460,7 +603,7 @@ function cancelledPreview(): string {
 function clockPreview(): string {
   const width = 420
   const cellW = 54
-  const cellH = 52
+  const cellH = 62
   const cells = buildMonthGrid({
     year: 2026,
     month: 11,
@@ -561,6 +704,7 @@ const images: Record<string, string> = {
   'gradient.svg': gradientPreview(),
   'series.svg': seriesPreview(),
   'hero.svg': hero(),
+  'lithuanian.svg': lithuanian(),
   'panel.svg': panel(),
   'states.svg': states(),
   'tide.svg': tide(),

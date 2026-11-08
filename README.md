@@ -158,6 +158,10 @@ translations:
 
 That gives `po 3 val. 52 min.`, `liko 7 min.` and `baigėsi prieš 23 min.`.
 
+<p align="center">
+  <img src="docs/lithuanian.svg" alt="The card with a Lithuanian translation applied" width="760">
+</p>
+
 | Key          | English             | Placeholder | Used for                          |
 | ------------ | ------------------- | ----------- | --------------------------------- |
 | `today`      | Today               |             | The heading for today's events    |
