@@ -2,13 +2,18 @@ import type { CompiledRule, CompiledRules, Rule, RuleError, RuleResult } from '.
 
 const FIELDS = ['icon', 'color', 'calendar'] as const
 
+const escapeForPattern = (value: string) => value.replaceAll(/[\\^$.*+?()[\]{}|/]/g, '\\$&')
+
 function compileOne(rule: Rule, index: number): CompiledRule | RuleError {
-  const match: unknown = (rule as Partial<Rule> | null)?.match
+  const { match: rawMatch, exact, ...fields }: Rule = rule ?? {}
+  const match: unknown = rawMatch
+  if (typeof exact === 'string') {
+    return { ...fields, pattern: new RegExp(`^${escapeForPattern(exact)}$`, 'u') }
+  }
   if (typeof match !== 'string') {
-    return { index, match: String(match), message: 'match must be a string' }
+    return { index, match: String(match), message: 'match or exact must be a string' }
   }
   try {
-    const { match: _match, ...fields } = rule
     return { ...fields, pattern: new RegExp(match, 'iu') }
   } catch (error) {
     return { index, match, message: error instanceof Error ? error.message : String(error) }
@@ -28,12 +33,19 @@ export function compileRules(rules: readonly Rule[]): CompiledRules {
 export function applyRules(compiled: CompiledRules, summary: string): RuleResult {
   const result: RuleResult = {}
   for (const rule of compiled.rules) {
-    if (!rule.pattern.test(summary)) continue
+    const found = rule.pattern.exec(summary)
+    if (!found) continue
     for (const field of FIELDS) {
       const value = rule[field]
       if (result[field] === undefined && typeof value === 'string' && value !== '') {
         result[field] = value
       }
+    }
+    if (result.title === undefined && typeof rule.title === 'string' && rule.title !== '') {
+      result.title = rule.title.replaceAll(
+        /\$(\d)/g,
+        (_, group: string) => found[Number(group)] ?? '',
+      )
     }
   }
   return result

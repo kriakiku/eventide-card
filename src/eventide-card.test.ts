@@ -201,6 +201,19 @@ describe('eventide-card', () => {
     element.remove()
   })
 
+  test('rules can rename an event', async () => {
+    const element = await mount({
+      rules: [
+        { exact: 'Sprint demo', title: 'Demo time' },
+        { match: '^daily (\\w+)$', title: '$1 call' },
+      ],
+    })
+    expect(rowByTitle(element, 'Demo time')).toBeDefined()
+    expect(rowByTitle(element, 'Sprint demo')).toBeUndefined()
+    expect(rowByTitle(element, 'sync call')).toBeDefined()
+    element.remove()
+  })
+
   test('uses custom translations for the current language', async () => {
     const element = await mount({
       translations: { en: { today: 'Now-ish', all_day: 'Whole day', time_left: '{time} to go' } },

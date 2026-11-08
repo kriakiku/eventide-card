@@ -99,13 +99,15 @@ export interface GridCell {
 }
 
 export interface Rule {
-  match: string
+  match?: string
+  exact?: string
+  title?: string
   icon?: string
   color?: string
   calendar?: string
 }
 
-export interface CompiledRule extends Omit<Rule, 'match'> {
+export interface CompiledRule extends Omit<Rule, 'match' | 'exact'> {
   pattern: RegExp
 }
 
@@ -120,4 +122,4 @@ export interface CompiledRules {
   errors: RuleError[]
 }
 
-export type RuleResult = Pick<Rule, 'icon' | 'color' | 'calendar'>
+export type RuleResult = Pick<Rule, 'icon' | 'color' | 'calendar' | 'title'>

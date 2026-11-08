@@ -343,7 +343,7 @@ export class EventideCard extends LitElement {
       <div class="text">
         <div class="summary">
           ${rule.icon ? html`<ha-icon .icon=${rule.icon}></ha-icon>` : nothing}
-          <span>${event.summary}</span>
+          <span>${rule.title ?? event.summary}</span>
         </div>
         <div class="sub">${this.#timeText(item, context)} · ${name}</div>
       </div>

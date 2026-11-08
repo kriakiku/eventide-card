@@ -103,6 +103,24 @@ Outlook marks a cancelled meeting with a prefix in its title, such as `Canceled:
 
 Home Assistant currently removes events with a cancelled status before they reach any card, so Google Calendar cancellations can't be shown.
 
+## Renaming events
+
+Long or noisy titles can be replaced with your own through `rules`. Use `exact` for a title that must match completely, including case, and `match` for a case-insensitive regular expression. The whole title is replaced, and `$1` to `$9` insert what the groups in `match` captured.
+
+```yaml
+type: custom:eventide-card
+calendars:
+  - calendar.work
+rules:
+  - exact: Weekly sync with the platform team
+    title: Platform sync
+  - match: "^Project (\\w+) review"
+    title: $1 review
+    icon: mdi:presentation
+```
+
+Rules always look at the original title, and the first rule that sets a title wins. A renamed event keeps its place, its color and its identity for `series_colors`.
+
 ## Optional clock
 
 Turn on `show_clock` to put the current time under the calendar, centered in the free space. It's off by default and follows your 12 or 24-hour setting.
@@ -203,24 +221,24 @@ rules:
     color: '#E0704A'
 ```
 
-| Option            | Default         | Description                                                                                 |
-| ----------------- | --------------- | ------------------------------------------------------------------------------------------- |
-| `calendars`       | none            | The calendar entities to show, each with an optional `color`.                               |
-| `view`            | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.                                  |
-| `lead_time`       | `60`            | Minutes before the start when the row begins to fill. `0` disables.                         |
-| `linger`          | `30`            | Minutes a finished timed event stays in the list. `0` disables.                             |
-| `limit`           | `5`             | How many timed events to show. Finished ones count.                                         |
-| `dedupe`          | `true`          | Show an event found in several calendars only once.                                         |
-| `first_weekday`   | your HA setting | First day of the week: `monday` to `sunday`, or `language`.                                 |
-| `time_format`     | your HA setting | `24`, `12` or `language`.                                                                   |
-| `today_color`     | theme primary   | The color of the current day in the grid.                                                   |
-| `show_clock`      | `false`         | Show the current time under the calendar.                                                   |
-| `show_navigation` | `true`          | Show the buttons that switch months or weeks.                                               |
-| `series_colors`   | `false`         | Give each recurring event its own shade of the calendar color.                              |
-| `translations`    | none            | Custom wording per language, see [Languages and translations](#languages-and-translations). |
-| `show_cancelled`  | `true`          | Show recognized cancelled events.                                                           |
-| `cancelled_match` | common prefixes | The pattern that marks an event as cancelled, `""` to turn it off.                          |
-| `rules`           | none            | Patterns that set `icon` and `color` by title, first match per field.                       |
+| Option            | Default         | Description                                                                                                     |
+| ----------------- | --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `calendars`       | none            | The calendar entities to show, each with an optional `color`.                                                   |
+| `view`            | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.                                                      |
+| `lead_time`       | `60`            | Minutes before the start when the row begins to fill. `0` disables.                                             |
+| `linger`          | `30`            | Minutes a finished timed event stays in the list. `0` disables.                                                 |
+| `limit`           | `5`             | How many timed events to show. Finished ones count.                                                             |
+| `dedupe`          | `true`          | Show an event found in several calendars only once.                                                             |
+| `first_weekday`   | your HA setting | First day of the week: `monday` to `sunday`, or `language`.                                                     |
+| `time_format`     | your HA setting | `24`, `12` or `language`.                                                                                       |
+| `today_color`     | theme primary   | The color of the current day in the grid.                                                                       |
+| `show_clock`      | `false`         | Show the current time under the calendar.                                                                       |
+| `show_navigation` | `true`          | Show the buttons that switch months or weeks.                                                                   |
+| `series_colors`   | `false`         | Give each recurring event its own shade of the calendar color.                                                  |
+| `translations`    | none            | Custom wording per language, see [Languages and translations](#languages-and-translations).                     |
+| `show_cancelled`  | `true`          | Show recognized cancelled events.                                                                               |
+| `cancelled_match` | common prefixes | The pattern that marks an event as cancelled, `""` to turn it off.                                              |
+| `rules`           | none            | Set `icon`, `color` and `title` by event title, first match per field. See [Renaming events](#renaming-events). |
 
 ## Roadmap
 

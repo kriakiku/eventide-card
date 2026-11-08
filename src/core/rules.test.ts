@@ -36,6 +36,50 @@ describe('compileRules', () => {
   })
 })
 
+describe('renaming', () => {
+  const titleOf = (rules: Parameters<typeof compileRules>[0], summary: string) =>
+    applyRules(compileRules(rules), summary).title
+
+  test('exact matches the whole title only, with the same case', () => {
+    const rules = [{ exact: 'Team sync', title: 'Sync' }]
+    expect(titleOf(rules, 'Team sync')).toBe('Sync')
+    expect(titleOf(rules, 'team sync')).toBeUndefined()
+    expect(titleOf(rules, 'Team sync today')).toBeUndefined()
+  })
+
+  test('exact treats special characters literally', () => {
+    const rules = [{ exact: 'Q3 (plan) [draft] a+b/c?', title: 'Plan' }]
+    expect(titleOf(rules, 'Q3 (plan) [draft] a+b/c?')).toBe('Plan')
+    expect(titleOf(rules, 'Q3 plan draft')).toBeUndefined()
+  })
+
+  test('a pattern replaces the whole title', () => {
+    expect(titleOf([{ match: 'daily', title: 'Standup' }], 'Baccarat DAILY call')).toBe('Standup')
+  })
+
+  test('capture groups can be used in the new title', () => {
+    const rules = [{ match: '^Project (\\w+) review$', title: '$1 review' }]
+    expect(titleOf(rules, 'Project Apollo review')).toBe('Apollo review')
+  })
+
+  test('a missing group becomes empty', () => {
+    expect(titleOf([{ match: 'a', title: 'x$3y' }], 'a')).toBe('xy')
+  })
+
+  test('the first rule with a title wins, and others still add their fields', () => {
+    const compiled = compileRules([
+      { match: 'a', icon: 'mdi:a' },
+      { match: 'a', title: 'First' },
+      { match: 'a', title: 'Second', color: 'red' },
+    ])
+    expect(applyRules(compiled, 'a')).toEqual({ icon: 'mdi:a', title: 'First', color: 'red' })
+  })
+
+  test('a rule with neither match nor exact is reported', () => {
+    expect(compileRules([{ title: 'x' }]).errors).toHaveLength(1)
+  })
+})
+
 describe('applyRules', () => {
   test.each([
     ['українська', 'Українська', true],
