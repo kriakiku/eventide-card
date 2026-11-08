@@ -2,12 +2,14 @@ import { css } from 'lit'
 
 export const cardStyles = css`
   :host {
+    --eventide-corner: superellipse(1.6);
     display: block;
     height: 100%;
     --eventide-row: color-mix(in srgb, var(--primary-text-color) 6%, transparent);
     --eventide-tile: var(--ha-card-background, var(--card-background-color, transparent));
   }
   ha-card {
+    corner-shape: var(--eventide-corner);
     height: 100%;
     box-sizing: border-box;
     padding: 16px;
@@ -80,7 +82,8 @@ export const cardStyles = css`
     content: '';
     position: absolute;
     inset: 3px;
-    border-radius: 12px;
+    border-radius: 15px;
+    corner-shape: var(--eventide-corner);
   }
   .day.busy::before {
     background: var(--bg);
@@ -94,13 +97,13 @@ export const cardStyles = css`
   }
   .num {
     position: relative;
-    transform: translateY(-9px);
+    transform: translateY(-11px);
   }
   .dots {
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(50% + 7px);
+    top: calc(50% + 4px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -193,7 +196,8 @@ export const cardStyles = css`
     padding: 0 14px 0 10px;
     margin-bottom: 8px;
     border: 1.5px solid transparent;
-    border-radius: 16px;
+    border-radius: 20px;
+    corner-shape: var(--eventide-corner);
     background: var(--eventide-row);
   }
   .row.soon {
@@ -219,7 +223,8 @@ export const cardStyles = css`
     height: 54px;
     text-align: center;
     border: 1.5px solid var(--c);
-    border-radius: 11px;
+    border-radius: 14px;
+    corner-shape: var(--eventide-corner);
     background: var(--eventide-tile);
     overflow: hidden;
   }

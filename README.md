@@ -141,7 +141,7 @@ rules:
 - [x] Time and state core with tests
 - [x] Live data from Home Assistant, with a REST fallback
 - [x] The card: month grid, week strip, agenda and responsive layouts
-- [x] Translations (English, Russian, Ukrainian)
+- [x] Translations (English, Ukrainian)
 - [ ] First release
 - [ ] Visual editor
 - [ ] HACS support

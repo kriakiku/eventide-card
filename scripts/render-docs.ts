@@ -204,7 +204,7 @@ function renderCells(
     parts.push(
       text(
         cx + cellW / 2,
-        cy + cellH / 2 - 3,
+        cy + cellH / 2 - 5,
         cls,
         14,
         String(Number(cell.dayKey.slice(8))),
@@ -232,15 +232,18 @@ function renderCells(
     }
     const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     rows.forEach((dotRow, rowIndex) => {
-      const dotY = cy + cellH / 2 + 10 + rowIndex * 9
+      const dotY = cy + cellH / 2 + 6 + rowIndex * 8
+      const label = more > 0 && rowIndex === rows.length - 1 ? `+${more}` : ''
+      const dotsWidth = (dotRow.length - 1) * 10 + 6
+      const labelWidth = label.length * 5.5
+      const total = dotsWidth + (label ? 4 + labelWidth : 0)
+      const startX = cx + cellW / 2 - total / 2
       dotRow.forEach((id, dot) => {
-        const dotX = cx + cellW / 2 + (dot - (dotRow.length - 1) / 2) * 10
         const fill = cell.isToday ? '#FFFFFF' : (COLORS[id] ?? WORK)
-        parts.push(`<circle cx="${dotX}" cy="${dotY}" r="3" fill="${fill}"/>`)
+        parts.push(`<circle cx="${startX + 3 + dot * 10}" cy="${dotY}" r="3" fill="${fill}"/>`)
       })
-      if (more > 0 && rowIndex === rows.length - 1) {
-        const textX = cx + cellW / 2 + dotRow.length * 5 + 2
-        parts.push(text(textX, dotY + 3.5, cell.isToday ? 'on' : 't2', 10, `+${more}`))
+      if (label) {
+        parts.push(text(startX + dotsWidth + 4, dotY + 3.5, cell.isToday ? 'on' : 't2', 10, label))
       }
     })
   })

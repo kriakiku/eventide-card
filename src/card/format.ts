@@ -34,20 +34,6 @@ const EN: Strings = {
   ended: (span) => ['ended', `${span} ago`],
 }
 
-const RU: Strings = {
-  today: 'Сегодня',
-  tomorrow: 'Завтра',
-  allDay: 'Весь день',
-  empty: 'Ближайших событий нет',
-  freeDay: 'В этот день свободно',
-  justEnded: 'только что',
-  minutes: 'мин',
-  hours: 'ч',
-  until: (span) => ['через', span],
-  left: (span) => ['осталось', span],
-  ended: (span) => ['закончилось', `${span} назад`],
-}
-
 const UK: Strings = {
   today: 'Сьогодні',
   tomorrow: 'Завтра',
@@ -66,7 +52,6 @@ const MINUTE = 60_000
 
 export function stringsFor(language: string): Strings {
   const prefix = language.toLowerCase().split('-')[0]
-  if (prefix === 'ru') return RU
   if (prefix === 'uk') return UK
   return EN
 }

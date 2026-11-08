@@ -29,25 +29,26 @@ function item(overrides: Partial<AgendaItem>, startDay = '2026-11-09'): AgendaIt
 }
 
 describe('etaLines', () => {
-  const ru = stringsFor('ru')
+  const uk = stringsFor('uk')
 
   test.each([
-    ['rounds a start up', { phase: 'soon', msUntilStart: 21.5 * MIN }, ['через', '22 мин']],
-    ['never says zero', { phase: 'soon', msUntilStart: 1000 }, ['через', '1 мин']],
-    ['hours and minutes', { phase: 'later', msUntilStart: 232 * MIN }, ['через', '3 ч 52 мин']],
-    ['whole hours', { phase: 'later', msUntilStart: 120 * MIN }, ['через', '2 ч']],
-    ['running', { phase: 'running', msUntilEnd: 6.2 * MIN }, ['осталось', '7 мин']],
-    ['finished', { phase: 'finished', msSinceEnd: 12.9 * MIN }, ['закончилось', '12 мин назад']],
-    ['just finished', { phase: 'finished', msSinceEnd: 20_000 }, ['только что']],
+    ['rounds a start up', { phase: 'soon', msUntilStart: 21.5 * MIN }, ['за', '22 хв']],
+    ['never says zero', { phase: 'soon', msUntilStart: 1000 }, ['за', '1 хв']],
+    ['hours and minutes', { phase: 'later', msUntilStart: 232 * MIN }, ['за', '3 год 52 хв']],
+    ['whole hours', { phase: 'later', msUntilStart: 120 * MIN }, ['за', '2 год']],
+    ['running', { phase: 'running', msUntilEnd: 6.2 * MIN }, ['залишилось', '7 хв']],
+    ['finished', { phase: 'finished', msSinceEnd: 12.9 * MIN }, ['закінчилось', '12 хв тому']],
+    ['just finished', { phase: 'finished', msSinceEnd: 20_000 }, ['щойно']],
   ] as const)('%s', (_name, overrides, lines) => {
-    expect(etaLines(item(overrides), ru)).toEqual([...lines])
+    expect(etaLines(item(overrides), uk)).toEqual([...lines])
   })
 
   test('falls back to English and handles regional tags', () => {
     expect(etaLines(item({ phase: 'soon', msUntilStart: 5 * MIN }), stringsFor('de'))).toEqual([
       'in 5 min',
     ])
-    expect(stringsFor('ru-UA').today).toBe('Сегодня')
+    expect(stringsFor('uk-UA').today).toBe('Сьогодні')
+    expect(stringsFor('ru').today).toBe('Today')
     expect(stringsFor('uk').today).toBe('Сьогодні')
   })
 })
@@ -70,7 +71,7 @@ describe('showsEta', () => {
 
 describe('titles and clocks', () => {
   test('capitalizes month titles', () => {
-    expect(monthTitle('2026-11-09', 'ru')).toStartWith('Ноябрь')
+    expect(monthTitle('2026-11-09', 'uk')).toStartWith('Листопад')
     expect(monthTitle('2026-11-09', 'en')).toBe('November 2026')
   })
 
