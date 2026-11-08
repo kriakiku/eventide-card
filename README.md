@@ -13,7 +13,15 @@
 </div>
 
 > [!IMPORTANT]
-> Eventide is an early pre-release: the configuration can still change, there is no visual editor and it isn't in HACS yet. The images on this page are design previews from [a script](scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
+> Eventide is young and the configuration can still change between releases. The images on this page are design previews from [a script](scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
+
+## Install
+
+**With HACS.** Open HACS, choose the three dots in the top corner and then **Custom repositories**. Add `https://github.com/kriakiku/eventide-card` with the type **Dashboard**, then find Eventide in HACS and download it.
+
+**By hand.** Download `eventide-card.js` from the [latest release](https://github.com/kriakiku/eventide-card/releases/latest), put it in your `www` folder and add `/local/eventide-card.js` as a JavaScript module under your dashboard resources.
+
+Then add the card from the card picker. It has a visual editor for everything except `translations` and `cancelled_match`, which are set in YAML.
 
 ## The idea
 
@@ -272,9 +280,10 @@ rules:
 - [x] Live data from Home Assistant, with a REST fallback
 - [x] The card: month grid, week strip, agenda and responsive layouts
 - [x] Any language through the browser, with custom translations
-- [ ] First release
-- [ ] Visual editor
-- [ ] HACS support
+- [x] First release
+- [x] Visual editor
+- [x] HACS support as a custom repository
+- [ ] Listing in the default HACS store
 
 ## Development
 

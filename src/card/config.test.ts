@@ -42,7 +42,7 @@ describe('resolveConfig', () => {
     ['a negative limit', { calendars, limit: -1 }],
     ['an unknown first weekday', { calendars, first_weekday: 'mon' }],
     ['an unknown time format', { calendars, time_format: 13 }],
-    ['an empty today color', { calendars, today_color: '' }],
+    ['a non-text today color', { calendars, today_color: 5 }],
     ['an unknown translation key', { calendars, translations: { lt: { todai: 'x' } } }],
     ['a broken cancelled pattern', { calendars, cancelled_match: '[bad' }],
     ['a non-text translation', { calendars, translations: { lt: { today: 1 } } }],

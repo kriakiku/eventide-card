@@ -7,10 +7,10 @@ const escapeForPattern = (value: string) => value.replaceAll(/[\\^$.*+?()[\]{}|/
 function compileOne(rule: Rule, index: number): CompiledRule | RuleError {
   const { match: rawMatch, exact, ...fields }: Rule = rule ?? {}
   const match: unknown = rawMatch
-  if (typeof exact === 'string') {
+  if (typeof exact === 'string' && exact !== '') {
     return { ...fields, pattern: new RegExp(`^${escapeForPattern(exact)}$`, 'u') }
   }
-  if (typeof match !== 'string') {
+  if (typeof match !== 'string' || match === '') {
     return { index, match: String(match), message: 'match or exact must be a string' }
   }
   try {

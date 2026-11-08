@@ -6,6 +6,7 @@ import {
   type ResolvedConfig,
   type View,
 } from './card/config.ts'
+import { configForm } from './card/editor.ts'
 import { CalendarFeed, feedWindow, type FeedHass } from './card/feed.ts'
 import {
   clockFormatter,
@@ -102,7 +103,12 @@ export class EventideCard extends LitElement {
     const calendars = Object.keys(hass?.states ?? {})
       .filter((entity) => entity.startsWith('calendar.'))
       .slice(0, 2)
+      .map((entity) => ({ entity }))
     return { calendars }
+  }
+
+  static getConfigForm() {
+    return configForm
   }
 
   setConfig(raw: EventideConfig): void {
@@ -421,7 +427,12 @@ export class EventideCard extends LitElement {
 
 declare global {
   interface Window {
-    customCards?: Array<{ type: string; name: string; description: string }>
+    customCards?: Array<{
+      type: string
+      name: string
+      description: string
+      documentationURL: string
+    }>
   }
 }
 
@@ -432,5 +443,6 @@ if (!customElements.get('eventide-card')) {
     type: 'eventide-card',
     name: 'Eventide',
     description: 'A calendar where events rise before they start and ebb while they run.',
+    documentationURL: 'https://github.com/kriakiku/eventide-card',
   })
 }

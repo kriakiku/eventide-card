@@ -78,8 +78,8 @@ function resolveCalendar(item: string | CalendarConfig, index: number): Resolved
   }
   return {
     entity: calendar.entity,
-    color: calendar.color ?? PALETTE[index % PALETTE.length] ?? '#7F77DD',
-    ...(calendar.name === undefined ? {} : { name: calendar.name }),
+    color: calendar.color || (PALETTE[index % PALETTE.length] ?? '#7F77DD'),
+    ...(calendar.name ? { name: calendar.name } : {}),
   }
 }
 
@@ -135,8 +135,8 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
   if (timeFormat !== undefined && !TIME_FORMATS.includes(timeFormat)) {
     throw new Error(`time_format must be one of ${TIME_FORMATS.join(', ')}`)
   }
-  const todayColor = raw.today_color
-  if (todayColor !== undefined && (typeof todayColor !== 'string' || todayColor === '')) {
+  const todayColor = raw.today_color === '' ? undefined : raw.today_color
+  if (todayColor !== undefined && typeof todayColor !== 'string') {
     throw new Error('today_color must be a color')
   }
   return {
