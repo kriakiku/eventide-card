@@ -10,6 +10,8 @@ import {
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
+  seriesColor,
+  seriesShift,
   showsEta,
   stringsFor,
 } from './format.ts'
@@ -117,6 +119,26 @@ describe('hour cycles and dots', () => {
 
   test('keeps the calendar order across rows', () => {
     expect(dotsOf(['a', 'a', 'a', 'b']).rows).toEqual([['a', 'a', 'a'], ['b']])
+  })
+})
+
+describe('series colors', () => {
+  test('are stable and stay within a harmonious hue range', () => {
+    for (const id of ['a', 'Team daily', 'uid-123@outlook', 'Українська']) {
+      expect(seriesShift(id)).toBe(seriesShift(id))
+      expect(Math.abs(seriesShift(id))).toBeLessThanOrEqual(48)
+    }
+  })
+
+  test('spread across different events', () => {
+    const shifts = new Set(Array.from({ length: 100 }, (_, index) => seriesShift(`event-${index}`)))
+    expect(shifts.size).toBe(7)
+  })
+
+  test('are derived from the calendar color', () => {
+    expect(seriesColor('#7F77DD', 'a')).toBe(
+      `oklch(from #7F77DD l c calc(h + ${seriesShift('a')}))`,
+    )
   })
 })
 

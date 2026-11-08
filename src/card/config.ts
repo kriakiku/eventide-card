@@ -24,6 +24,7 @@ export interface EventideConfig {
   today_color?: string
   show_clock?: boolean
   show_navigation?: boolean
+  series_colors?: boolean
   rules?: Rule[]
 }
 
@@ -45,6 +46,7 @@ export interface ResolvedConfig {
   todayColor?: string
   showClock: boolean
   showNavigation: boolean
+  seriesColors: boolean
   rules: CompiledRules
 }
 
@@ -108,6 +110,7 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
     ...(todayColor === undefined ? {} : { todayColor }),
     showClock: raw.show_clock ?? false,
     showNavigation: raw.show_navigation ?? true,
+    seriesColors: raw.series_colors ?? false,
     rules: compileRules(raw.rules ?? []),
   }
 }

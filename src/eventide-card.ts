@@ -17,6 +17,7 @@ import {
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
+  seriesColor,
   showsEta,
   stringsFor,
   weekdayShort,
@@ -310,7 +311,8 @@ export class EventideCard extends LitElement {
     const { config, language, strings, todayKey, colors } = context
     const { event, phase, fill } = item
     const rule = applyRules(config.rules, event.summary)
-    const color = rule.color ?? colors.get(event.calendarId) ?? 'var(--primary-color)'
+    const base = colors.get(event.calendarId) ?? 'var(--primary-color)'
+    const color = rule.color ?? (config.seriesColors ? seriesColor(base, event.seriesId) : base)
     const calendar = config.calendars.find(({ entity }) => entity === event.calendarId)
     const name =
       calendar?.name ??

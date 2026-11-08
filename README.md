@@ -75,7 +75,19 @@ It's meant to be light enough for a low-powered wall tablet. The card runs no co
 
 A day with events is tinted in the color of its calendar. When several calendars share a day, their colors blend into a gradient, so a mixed day is easy to tell apart.
 
+<p align="center">
+  <img src="docs/gradient.svg" alt="Seven days tinted by one, two, three and four calendars" width="560">
+</p>
+
 Each event also gets a dot in its calendar's color. Up to three dots sit in one row and up to six in two rows, and past that the card shows five dots and a small `+N`, so a busy day never reaches the edges of its cell.
+
+## Colors for recurring events
+
+Turn on `series_colors` to give each recurring event its own shade. The shade is a small hue shift around the calendar's color, so your daily and your weekly look different but still belong together. It comes from the event's identifier, or its title if it has none, so a meeting keeps the same color every time.
+
+<p align="center">
+  <img src="docs/series.svg" alt="Event rows whose colors vary around the color of their calendar" width="480">
+</p>
 
 ## Optional clock
 
@@ -134,6 +146,7 @@ rules:
 | `today_color`     | theme primary   | The color of the current day in the grid.                             |
 | `show_clock`      | `false`         | Show the current time under the calendar.                             |
 | `show_navigation` | `true`          | Show the buttons that switch months or weeks.                         |
+| `series_colors`   | `false`         | Give each recurring event its own shade of the calendar color.        |
 | `rules`           | none            | Patterns that set `icon` and `color` by title, first match per field. |
 
 ## Roadmap

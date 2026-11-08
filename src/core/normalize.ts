@@ -104,6 +104,7 @@ export function normalizeEvent(raw: unknown, context: NormalizeContext): Normali
       span.startMs,
       uid === null ? [raw.summary, span.endMs] : null,
     ]),
+    seriesId: uid ?? raw.summary,
     calendarId: context.calendarId,
     summary: raw.summary,
     description: optionalText(raw.description),

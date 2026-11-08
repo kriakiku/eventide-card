@@ -142,6 +142,21 @@ export function dayBackground(colors: readonly string[]): string {
   return `linear-gradient(135deg, ${stops.join(', ')})`
 }
 
+const SERIES_SHIFTS = [-48, -32, -16, 0, 16, 32, 48]
+
+export function seriesShift(seriesId: string): number {
+  let hash = 0x811c9dc5
+  for (const char of seriesId) {
+    hash ^= char.codePointAt(0) ?? 0
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return SERIES_SHIFTS[(hash >>> 0) % SERIES_SHIFTS.length] ?? 0
+}
+
+export function seriesColor(base: string, seriesId: string): string {
+  return `oklch(from ${base} l c calc(h + ${seriesShift(seriesId)}))`
+}
+
 export function fadeEdges(
   scrollTop: number,
   clientHeight: number,

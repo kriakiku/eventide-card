@@ -46,6 +46,7 @@ describe('wire shapes', () => {
   test('REST timed event', () => {
     expect(normalizeEvent(restTimed, kyiv)).toEqual({
       key: expect.any(String),
+      seriesId: expect.any(String),
       calendarId: 'calendar.work',
       summary: 'Standup',
       description: 'Daily',
@@ -65,6 +66,7 @@ describe('wire shapes', () => {
   test('REST all-day event in the HA zone', () => {
     expect(normalizeEvent(restAllDay, kyiv)).toEqual({
       key: expect.any(String),
+      seriesId: expect.any(String),
       calendarId: 'calendar.work',
       summary: 'Holiday',
       description: null,
@@ -222,6 +224,27 @@ describe('malformed input is dropped', () => {
   test('non-string and empty optional fields become null', () => {
     const event = normalizeEvent({ start, end, summary: '', description: 4, location: '' }, kyiv)
     expect(event).toMatchObject({ summary: '', description: null, location: null })
+  })
+})
+
+describe('seriesId', () => {
+  const context = { calendarId: 'calendar.a', timeZone: 'UTC' }
+  const base = { start: '2026-11-09T10:00:00+00:00', end: '2026-11-09T11:00:00+00:00' }
+
+  test('is shared by every occurrence of a recurring event', () => {
+    const first = normalizeEvent({ ...base, summary: 'x', uid: 'u1', recurrence_id: 'a' }, context)
+    const second = normalizeEvent({ ...base, summary: 'y', uid: 'u1', recurrence_id: 'b' }, context)
+    expect(first?.seriesId).toBe('u1')
+    expect(second?.seriesId).toBe('u1')
+  })
+
+  test('falls back to the title without a uid', () => {
+    expect(normalizeEvent({ ...base, summary: 'Daily', uid: null }, context)?.seriesId).toBe(
+      'Daily',
+    )
+    expect(
+      normalizeEvent({ ...base, summary: 'Daily', uid: '  ' }, context)?.seriesId,
+    ).toBeDefined()
   })
 })
 

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import { dotsOf } from '../src/card/format.ts'
+import { dotsOf, seriesShift } from '../src/card/format.ts'
 import {
   buildAgenda,
   buildMonthGrid,
@@ -22,7 +22,12 @@ const HOME = '#E0704A'
 const ACCENT = '#5B50C8'
 const ROW_H = 64
 const ROW_GAP = 8
-const COLORS: Record<string, string> = { work: WORK, home: HOME }
+const COLORS: Record<string, string> = {
+  work: WORK,
+  home: HOME,
+  family: '#2FA98C',
+  sport: '#D4537E',
+}
 const LABELS: Record<string, string> = { work: 'Work', home: 'Personal' }
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -116,9 +121,14 @@ const etaOf = (item: AgendaItem) => {
 
 let clipId = 0
 
-function renderRow(item: AgendaItem, x: number, y: number, width: number): string {
+function renderRow(
+  item: AgendaItem,
+  x: number,
+  y: number,
+  width: number,
+  color = COLORS[item.event.calendarId] ?? WORK,
+): string {
   const { event, phase } = item
-  const color = COLORS[event.calendarId] ?? WORK
   const finished = phase === 'finished'
   const fillWidth = Math.round((item.fill ?? 0) * width)
   const id = `row${clipId++}`
@@ -336,6 +346,101 @@ function states(): string {
 const fade = (name: string, on: number, off: number) =>
   `@keyframes ${name} { 0%, ${on - 0.01}% { opacity: 0 } ${on}%, ${off - 0.01}% { opacity: 1 } ${off}%, 100% { opacity: 0 } }`
 
+function gradientPreview(): string {
+  const cellW = 72
+  const cellH = 72
+  const width = cellW * 7 + 40
+  const height = 24 + cellH + 40
+  const plan: string[][] = [
+    ['work'],
+    ['work', 'home'],
+    ['work', 'home', 'family'],
+    ['work', 'home', 'family', 'sport'],
+    ['home', 'family'],
+    ['sport'],
+    [],
+  ]
+  const days = plan.flatMap((calendars, index) => {
+    const day = `2026-11-${String(9 + index).padStart(2, '0')}`
+    return calendars.map((calendarId) => ({ calendarId, startDay: day, endDay: day }))
+  })
+  const cells = buildWeekGrid({
+    anchorKey: '2026-11-09',
+    firstWeekday: 1,
+    todayKey: '2026-11-01',
+    events: days,
+  })
+  return svg(
+    width,
+    height,
+    'Days tinted by one, two, three and four calendars',
+    [
+      `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
+      renderCells(cells, 20, 20, cellW, cellH),
+    ].join(''),
+  )
+}
+
+const toLinear = (value: number) =>
+  value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+const fromLinear = (value: number) =>
+  value <= 0.0031308 ? 12.92 * value : 1.055 * value ** (1 / 2.4) - 0.055
+
+const toHex = (value: number) =>
+  Math.round(Math.min(1, Math.max(0, fromLinear(Math.max(0, value)))) * 255)
+    .toString(16)
+    .padStart(2, '0')
+
+function rotateHue(hex: string, degrees: number): string {
+  const [r, g, b] = [1, 3, 5].map((at) =>
+    toLinear(Number.parseInt(hex.slice(at, at + 2), 16) / 255),
+  )
+  const red = r ?? 0
+  const green = g ?? 0
+  const blue = b ?? 0
+  const l = Math.cbrt(0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue)
+  const m = Math.cbrt(0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue)
+  const s = Math.cbrt(0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue)
+  const lightness = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s
+  const a0 = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s
+  const b0 = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  const angle = (degrees * Math.PI) / 180
+  const a1 = a0 * Math.cos(angle) - b0 * Math.sin(angle)
+  const b1 = a0 * Math.sin(angle) + b0 * Math.cos(angle)
+  const l2 = (lightness + 0.3963377774 * a1 + 0.2158037573 * b1) ** 3
+  const m2 = (lightness - 0.1055613458 * a1 - 0.0638541728 * b1) ** 3
+  const s2 = (lightness - 0.0894841775 * a1 - 1.291485548 * b1) ** 3
+  const channels = [
+    4.0767416621 * l2 - 3.3077115913 * m2 + 0.2309699292 * s2,
+    -1.2684380046 * l2 + 2.6097574011 * m2 - 0.3413193965 * s2,
+    -0.0041960863 * l2 - 0.7034186147 * m2 + 1.707614701 * s2,
+  ]
+  return `#${channels.map(toHex).join('')}`
+}
+
+function seriesPreview(): string {
+  const width = 520
+  const series = [
+    ...fixture('work', 'Team daily', 9, '10:00', '10:15'),
+    ...fixture('work', 'Design review', 9, '10:30', '11:30'),
+    ...fixture('work', 'Retro', 9, '10:50', '11:20'),
+    ...fixture('home', 'Language class', 9, '14:00', '15:00'),
+    ...fixture('home', 'Piano lesson', 9, '17:00', '18:00'),
+  ]
+  const body = series.map((event, index) => {
+    const base = COLORS[event.calendarId] ?? WORK
+    const color = rotateHue(base, seriesShift(event.seriesId))
+    return renderRow({ event, ...phaseOf(event, NOW) }, 0, index * (ROW_H + ROW_GAP), width, color)
+  })
+  const height = series.length * (ROW_H + ROW_GAP) - ROW_GAP
+  return svg(
+    width,
+    height,
+    'Event rows whose colors vary around their calendar color',
+    body.join(''),
+  )
+}
+
 function clockPreview(): string {
   const width = 420
   const cellW = 54
@@ -436,6 +541,8 @@ function tide(): string {
 mkdirSync(OUT, { recursive: true })
 const images: Record<string, string> = {
   'clock.svg': clockPreview(),
+  'gradient.svg': gradientPreview(),
+  'series.svg': seriesPreview(),
   'hero.svg': hero(),
   'panel.svg': panel(),
   'states.svg': states(),

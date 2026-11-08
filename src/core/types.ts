@@ -32,6 +32,7 @@ export interface NormalizeContext {
 
 export interface NormalizedEvent {
   key: string
+  seriesId: string
   calendarId: string
   summary: string
   description: string | null

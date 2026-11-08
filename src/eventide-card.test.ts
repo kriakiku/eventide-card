@@ -169,6 +169,19 @@ describe('eventide-card', () => {
     element.remove()
   })
 
+  test('series_colors shifts the row color, and a rule still wins', async () => {
+    const plain = await mount()
+    expect(rowByTitle(plain, 'Sprint demo')?.getAttribute('style')).not.toContain('oklch')
+    plain.remove()
+    const element = await mount({
+      series_colors: true,
+      rules: [{ match: 'dentist', color: 'red' }],
+    })
+    expect(rowByTitle(element, 'Sprint demo')?.getAttribute('style')).toContain('oklch(from')
+    expect(rowByTitle(element, 'Dentist')?.getAttribute('style')).toContain('--c:red')
+    element.remove()
+  })
+
   test('show_navigation hides the month buttons', async () => {
     const plain = await mount()
     expect(plain.shadowRoot?.querySelectorAll('.nav')).toHaveLength(2)

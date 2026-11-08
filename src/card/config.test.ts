@@ -61,6 +61,11 @@ describe('resolveConfig', () => {
     })
   })
 
+  test('series colors are off by default', () => {
+    expect(resolveConfig({ calendars }).seriesColors).toBe(false)
+    expect(resolveConfig({ calendars, series_colors: true }).seriesColors).toBe(true)
+  })
+
   test('accepts a time format as a number or a string', () => {
     expect(resolveConfig({ calendars, time_format: 24 }).timeFormat).toBe('24')
     expect(resolveConfig({ calendars, time_format: '12' }).timeFormat).toBe('12')
