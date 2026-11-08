@@ -5,19 +5,26 @@
 **A Home Assistant calendar card where events rise before they start and ebb while they run.**
 
 [![CI](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml/badge.svg)](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-7F77DD.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-7F77DD.svg)](https://github.com/kriakiku/eventide-card/blob/main/LICENSE)
 ![Status: pre-release](https://img.shields.io/badge/status-pre--release-E0704A.svg)
 
-<img src="docs/hero.svg" alt="Eventide card with a month grid next to an agenda of finished, running and upcoming events" width="760">
+<img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/hero.svg" alt="Eventide card with a month grid next to an agenda of finished, running and upcoming events" width="760">
 
 </div>
 
 > [!IMPORTANT]
-> Eventide is young and the configuration can still change between releases. The images on this page are design previews from [a script](scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
+> Eventide is young and the configuration can still change between releases. The images on this page are design previews from [a script](https://github.com/kriakiku/eventide-card/blob/main/scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
 
 ## Install
 
-**With HACS.** Open HACS, choose the three dots in the top corner and then **Custom repositories**. Add `https://github.com/kriakiku/eventide-card` with the type **Dashboard**, then find Eventide in HACS and download it.
+**With Marketplace (Home Assistant 2026.11 and newer).** Marketplace is the store built into Home Assistant.
+
+1. Open `/marketplace` in your Home Assistant and choose **Add from link**.
+2. Paste `https://github.com/kriakiku/eventide-card`. The first time, you are asked to connect GitHub with a short code.
+3. Open **Eventide** in the list and install it. The dashboard resource is added for you.
+4. Reload the page.
+
+**With HACS (older versions).** Open HACS, choose the three dots in the top corner and then **Custom repositories**. Add `https://github.com/kriakiku/eventide-card` with the type **Dashboard**, then find Eventide in HACS and download it.
 
 **By hand.** Download `eventide-card.js` from the [latest release](https://github.com/kriakiku/eventide-card/releases/latest), put it in your `www` folder and add `/local/eventide-card.js` as a JavaScript module under your dashboard resources.
 
@@ -30,7 +37,7 @@ Most calendar cards tell you what is on your calendar. Eventide shows you how cl
 Every event row is its own progress bar. As a meeting approaches, the row fills up like a rising tide. When it starts, the row is full, and it drains as the time runs out. You can read the state of your day from across the room, without reading a single number.
 
 <p align="center">
-  <img src="docs/tide.svg" alt="An event row filling up before the event starts and draining while it runs" width="640">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/tide.svg" alt="An event row filling up before the event starts and draining while it runs" width="640">
 </p>
 
 ## Four states, one row
@@ -38,7 +45,7 @@ Every event row is its own progress bar. As a meeting approaches, the row fills 
 <table>
 <tr>
 <td width="58%">
-<img src="docs/states.svg" alt="The later, soon, running and finished states of an event row">
+<img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/states.svg" alt="The later, soon, running and finished states of an event row">
 </td>
 <td>
 
@@ -61,7 +68,7 @@ A row keeps the same height in every state, so the list doesn't jump when an eve
 <table>
 <tr>
 <td align="center" width="40%">
-<img src="docs/panel.svg" alt="Eventide in a narrow layout with a week strip above the agenda" width="300">
+<img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/panel.svg" alt="Eventide in a narrow layout with a week strip above the agenda" width="300">
 </td>
 <td>
 
@@ -84,7 +91,7 @@ It's meant to be light enough for a low-powered wall tablet. The card runs no co
 A day with events is tinted in the color of its calendar. When several calendars share a day, their colors blend into a gradient, so a mixed day is easy to tell apart.
 
 <p align="center">
-  <img src="docs/gradient.svg" alt="Seven days tinted by one, two, three and four calendars" width="560">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/gradient.svg" alt="Seven days tinted by one, two, three and four calendars" width="560">
 </p>
 
 Each event also gets a dot in its calendar's color. Three dots sit in the first row, and the fourth and fifth tuck in between them below. Past five events, the fifth place becomes a plus in a circle tinted with the colors of the events that didn't fit, so a busy day never reaches the edges of its cell.
@@ -94,7 +101,7 @@ Each event also gets a dot in its calendar's color. Three dots sit in the first 
 Turn on `series_colors` to give each recurring event its own shade. The shade is a small hue shift around the calendar's color, so your daily and your weekly look different but still belong together. It comes from the event's identifier, or its title if it has none, so a meeting keeps the same color every time.
 
 <p align="center">
-  <img src="docs/series.svg" alt="Event rows whose colors vary around the color of their calendar" width="480">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/series.svg" alt="Event rows whose colors vary around the color of their calendar" width="480">
 </p>
 
 ## Cancelled events
@@ -102,7 +109,7 @@ Turn on `series_colors` to give each recurring event its own shade. The shade is
 A cancelled event stays visible for a while, so you know the slot is free, but it doesn't crowd the list. It's struck through, has no fill or countdown, and isn't counted in `limit` or in the calendar grid.
 
 <p align="center">
-  <img src="docs/cancelled.svg" alt="A cancelled event struck through between two other events" width="480">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/cancelled.svg" alt="A cancelled event struck through between two other events" width="480">
 </p>
 
 It appears the day before and disappears when it would have started. Events further ahead stay hidden, and a day you pick in the grid shows everything.
@@ -116,7 +123,7 @@ Home Assistant currently removes events with a cancelled status before they reac
 Give events an icon with `rules`. It appears before the title, and it's picked by matching the title.
 
 <p align="center">
-  <img src="docs/icons.svg" alt="Event rows with sync, presentation, book and tooth icons before their titles" width="480">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/icons.svg" alt="Event rows with sync, presentation, book and tooth icons before their titles" width="480">
 </p>
 
 ```yaml
@@ -160,7 +167,7 @@ Rules always look at the original title, and the first rule that sets a title wi
 Turn on `show_clock` to put the current time under the calendar, centered in the free space. It's off by default and follows your 12 or 24-hour setting.
 
 <p align="center">
-  <img src="docs/clock.svg" alt="The month grid with a large clock centered below it" width="360">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/clock.svg" alt="The month grid with a large clock centered below it" width="360">
 </p>
 
 ## Details that are already handled
@@ -211,7 +218,7 @@ translations:
 That gives `po 3 val. 52 min.`, `liko 7 min.` and `baigėsi prieš 23 min.`.
 
 <p align="center">
-  <img src="docs/lithuanian.svg" alt="The card with a Lithuanian translation applied" width="760">
+  <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/lithuanian.svg" alt="The card with a Lithuanian translation applied" width="760">
 </p>
 
 | Key          | English             | Placeholder | Used for                          |
@@ -311,4 +318,4 @@ scripts/         the generator for the README images
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/kriakiku/eventide-card/blob/main/LICENSE)
