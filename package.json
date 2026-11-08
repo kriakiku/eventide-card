@@ -1,0 +1,25 @@
+{
+  "name": "eventide-card",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "check": "bun run fmt:check && bun run lint && bun run typecheck && bun run test && bun run build",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "lint": "oxlint --type-aware",
+    "typecheck": "tsc",
+    "test": "bun test",
+    "build": "bun build src/index.ts --outfile dist/eventide-card.js --format esm --target browser --minify",
+    "docs:images": "bun run scripts/render-docs.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "typescript": "7.0.2"
+  },
+  "packageManager": "bun@1.4.4"
+}

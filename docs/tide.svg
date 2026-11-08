@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="104" viewBox="0 0 720 104" role="img" aria-label="An event row filling up before the event starts and draining while it runs"><style>
+  text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .card { fill: #FFFFFF; stroke: #E4E2EE; }
+  .row { fill: #F5F4FA; }
+  .tile { fill: #FFFFFF; }
+  .rule { stroke: #E4E2EE; }
+  .t1 { fill: #1F1D2B; }
+  .t2 { fill: #6A6778; }
+  .t3 { fill: #9C99A8; }
+  .on { fill: #FFFFFF; }
+  @media (prefers-color-scheme: dark) {
+    .card { fill: #1C1B24; stroke: #33313F; }
+    .row { fill: #272532; }
+    .tile { fill: #1C1B24; }
+    .rule { stroke: #3C3A49; }
+    .t1 { fill: #F2F0F8; }
+    .t2 { fill: #ABA8B8; }
+    .t3 { fill: #7E7B8C; }
+  }
+</style><style>
+  .tide { transform-box: fill-box; transform-origin: left; animation: tide 12s linear infinite; }
+  .wait, .live { animation: 12s step-end infinite; opacity: 0; }
+  .wait { animation-name: wait; }
+  .live { animation-name: live; }
+  .lbl { opacity: 0; animation: 12s step-end infinite; }
+  .dim { animation: dim 12s step-end infinite; }
+  @keyframes dim { 0%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0.45 } }
+  @keyframes tide { 0%, 12% { transform: scaleX(0) } 46% { transform: scaleX(1) } 84%, 100% { transform: scaleX(0) } }
+  @keyframes wait { 0%, 11.99% { opacity: 0 } 12%, 45.99% { opacity: 1 } 46%, 100% { opacity: 0 } }
+  @keyframes live { 0%, 45.99% { opacity: 0 } 46%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0 } }
+  @keyframes la { 0%, -0.01% { opacity: 0 } 0%, 11.99% { opacity: 1 } 12%, 100% { opacity: 0 } }
+  @keyframes lb { 0%, 11.99% { opacity: 0 } 12%, 45.99% { opacity: 1 } 46%, 100% { opacity: 0 } }
+  @keyframes lc { 0%, 45.99% { opacity: 0 } 46%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0 } }
+  @keyframes ld { 0%, 83.99% { opacity: 0 } 84%, 100% { opacity: 1 } 100.01%, 100% { opacity: 0 } }
+  @media (prefers-reduced-motion: reduce) {
+    .tide { animation: none; transform: scaleX(0.6); }
+    .wait, .lbl, .dim { animation: none; }
+    .live, .lc { animation: none; opacity: 1; }
+  }
+</style><clipPath id="tide-clip"><rect x="12" y="14" width="696" height="76" rx="20"/></clipPath><rect x="12" y="14" width="696" height="76" rx="20" class="row"/><g clip-path="url(#tide-clip)"><rect class="tide" x="12" y="14" width="696" height="76" fill="#7F77DD" opacity="0.32"/></g><rect class="wait" x="12.75" y="14.75" width="694.5" height="74.5" rx="19" fill="none" stroke="#7F77DD" stroke-width="1.5" stroke-dasharray="6 5"/><rect class="live" x="12.75" y="14.75" width="694.5" height="74.5" rx="19" fill="none" stroke="#7F77DD" stroke-width="1.5"/><g class="dim"><rect x="24" y="26" width="46" height="52" rx="12" class="tile" stroke="#7F77DD" stroke-width="1.5"/><text x="47" y="43" class="t2" font-size="12" text-anchor="middle">Mon</text><line x1="25" x2="69" y1="49" y2="49" class="rule"/><text x="47" y="70" class="t1" font-size="18" text-anchor="middle" font-weight="600">9</text><text x="88" y="48" class="t1" font-size="17" font-weight="600">Sprint demo</text><text x="88" y="70" class="t2" font-size="13.5" >10:30–11:30 · Work</text><text x="690" y="57" class="t1 lbl la" font-size="14" text-anchor="end" font-weight="600" style="animation-name:la">in 2 h</text><text x="690" y="57" class="t1 lbl lb" font-size="14" text-anchor="end" font-weight="600" style="animation-name:lb">in 20 min</text><text x="690" y="57" class="t1 lbl lc" font-size="14" text-anchor="end" font-weight="600" style="animation-name:lc">40 min left</text><text x="690" y="57" class="t1 lbl ld" font-size="14" text-anchor="end" font-weight="600" style="animation-name:ld">ended 5 min ago</text></g></svg>
