@@ -13,7 +13,7 @@
 </div>
 
 > [!IMPORTANT]
-> Eventide is in early development and **can't be installed yet**. The time and state core is done and tested, while the card itself is still being built. The images on this page are design previews from [a script](scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
+> Eventide is an early pre-release: the configuration can still change, there is no visual editor and it isn't in HACS yet. The images on this page are design previews from [a script](scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
 
 ## The idea
 
@@ -46,7 +46,7 @@ Every event row is its own progress bar. As a meeting approaches, the row fills 
 </tr>
 </table>
 
-By design, a row keeps the same height in every state, so the list won't jump when an event changes state.
+A row keeps the same height in every state, so the list doesn't jump when an event changes state.
 
 ## Fits the screen it's on
 
@@ -57,13 +57,13 @@ By design, a row keeps the same height in every state, so the list won't jump wh
 </td>
 <td>
 
-The layout is planned to follow the width of the card rather than the device:
+The layout follows the width of the card rather than the device:
 
 - **Wide:** the month grid next to the agenda.
 - **Medium:** the month grid above the agenda.
 - **Narrow:** a week strip above the agenda, for phones and wall panels.
 
-It's meant to be light enough for a low-powered wall tablet. The card won't run continuous animations, and one shared timer will recalculate the states without touching the network.
+It's meant to be light enough for a low-powered wall tablet. The card runs no continuous animations, and one timer recalculates the states every 30 seconds without touching the network.
 
 </td>
 </tr>
@@ -84,7 +84,7 @@ The core is pure TypeScript with no runtime dependencies. It's covered by tests 
 ## Configuration
 
 > [!NOTE]
-> This is the planned configuration. It may change before the first release.
+> Until 1.0 the configuration may change between releases.
 
 ```yaml
 type: custom:eventide-card
@@ -118,10 +118,12 @@ rules:
 ## Roadmap
 
 - [x] Time and state core with tests
-- [ ] Live data from Home Assistant
-- [ ] The card: month grid, week strip, agenda and responsive layouts
-- [ ] Visual editor and translations (English, Russian, Ukrainian)
-- [ ] First release and HACS support
+- [x] Live data from Home Assistant, with a REST fallback
+- [x] The card: month grid, week strip, agenda and responsive layouts
+- [x] Translations (English, Russian, Ukrainian)
+- [ ] First release
+- [ ] Visual editor
+- [ ] HACS support
 
 ## Development
 
@@ -135,6 +137,8 @@ bun run docs:images  # redraw the images in docs/
 ```
 
 ```text
+src/eventide-card.ts  the card element
+src/card/        config, translations and the live data feed
 src/core/        pure logic: nothing reads the clock or the system time zone
   normalize.ts   Home Assistant events to one internal form
   phase.ts       later, soon, running, finished and the fill

@@ -1,6 +1,6 @@
 {
   "name": "eventide-card",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -11,10 +11,14 @@
     "lint": "oxlint --type-aware",
     "typecheck": "tsc",
     "test": "bun test",
-    "build": "bun build src/index.ts --outfile dist/eventide-card.js --format esm --target browser --minify",
+    "build": "bun build src/eventide-card.ts --outfile dist/eventide-card.js --format esm --target browser --minify",
     "docs:images": "bun run scripts/render-docs.ts"
   },
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^21.0.4",
     "@types/bun": "^1.4.4",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",
