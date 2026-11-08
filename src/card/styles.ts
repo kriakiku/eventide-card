@@ -77,17 +77,53 @@ export const cardStyles = css`
     border-radius: 12px;
   }
   .day.busy::before {
-    background: color-mix(in srgb, var(--c) 26%, transparent);
+    background: var(--bg);
   }
   .day.today::before {
-    background: var(--primary-color);
+    background: var(--eventide-today, var(--primary-color));
   }
   .day.selected::before {
     outline: 2px solid var(--primary-text-color);
     outline-offset: -2px;
   }
-  .day span {
+  .num {
     position: relative;
+    transform: translateY(-9px);
+  }
+  .dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% + 7px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .dot-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 7px;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--c);
+  }
+  .more {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 7px;
+    color: var(--secondary-text-color);
+  }
+  .day.today .dot {
+    background: var(--text-primary-color, #fff);
+  }
+  .day.today .more {
+    color: var(--text-primary-color, #fff);
   }
   .day.today {
     font-weight: 600;

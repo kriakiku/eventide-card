@@ -1,4 +1,4 @@
-export { buildAgenda } from './core/agenda.ts'
+export { buildAgenda, dedupeEvents } from './core/agenda.ts'
 export { buildMonthGrid, buildWeekGrid } from './core/grid.ts'
 export { normalizeEvent, normalizeEvents } from './core/normalize.ts'
 export { DEFAULT_LEAD_MS, DEFAULT_LINGER_MS, isSpanning, phaseOf } from './core/phase.ts'

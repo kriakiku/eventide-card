@@ -10,7 +10,7 @@ function calendarRanks(events: readonly NormalizedEvent[]): Map<string, number> 
   return ranks
 }
 
-function dropCrossCalendarDuplicates(events: readonly NormalizedEvent[]): NormalizedEvent[] {
+export function dedupeEvents(events: readonly NormalizedEvent[]): NormalizedEvent[] {
   const owners = new Map<string, string>()
   return events.filter((event) => {
     const identity = `${event.startMs}:${event.endMs}:${event.summary}`
@@ -45,7 +45,7 @@ export function buildAgenda(
       return nowMs < visibleUntil && (day === undefined || (startDay <= day && day <= endDay))
     })
     .toSorted((a, b) => a.startMs - b.startMs || rankOf(a) - rankOf(b))
-  const unique = dedupe ? dropCrossCalendarDuplicates(live) : live
+  const unique = dedupe ? dedupeEvents(live) : live
 
   const groupDayOf = (event: NormalizedEvent) => {
     if (day !== undefined) return day

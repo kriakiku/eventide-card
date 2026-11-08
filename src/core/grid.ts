@@ -23,15 +23,15 @@ function buildCells(
   const calendars = [...new Set(events.map((event) => event.calendarId))]
   return Array.from({ length: count }, (_, index) => {
     const dayKey = addDays(startKey, index)
-    const present = new Set<string>()
-    for (const event of events) {
-      if (event.startDay <= dayKey && dayKey <= event.endDay) present.add(event.calendarId)
-    }
+    const touching = events.filter(({ startDay, endDay }) => startDay <= dayKey && dayKey <= endDay)
     return {
       dayKey,
       inMonth: monthOf(dayKey) === month,
       isToday: dayKey === todayKey,
-      calendarIds: calendars.filter((id) => present.has(id)),
+      calendarIds: calendars.filter((id) => touching.some((event) => event.calendarId === id)),
+      eventCalendarIds: calendars.flatMap((id) =>
+        touching.filter((event) => event.calendarId === id).map(() => id),
+      ),
     }
   })
 }

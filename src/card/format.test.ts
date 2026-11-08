@@ -3,6 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import type { AgendaItem } from '../core/types.ts'
 import {
   clockFormatter,
+  dayBackground,
+  dotsOf,
   etaLines,
   groupTitle,
   monthTitle,
@@ -85,6 +87,50 @@ describe('titles and clocks', () => {
     )
     expect(clockFormatter({ language: 'en', time_format: '12' }, 'UTC').format(at)).toMatch(
       /01:05\sPM/,
+    )
+  })
+})
+
+describe('hour cycles and dots', () => {
+  test('24-hour format says 00 at midnight, even in English', () => {
+    const midnight = Date.UTC(2026, 10, 9, 0, 5)
+    expect(clockFormatter({ language: 'en', time_format: '24' }, 'UTC').format(midnight)).toBe(
+      '00:05',
+    )
+  })
+
+  test.each([
+    [0, [], 0],
+    [1, [1], 0],
+    [3, [3], 0],
+    [4, [3, 1], 0],
+    [6, [3, 3], 0],
+    [7, [3, 2], 2],
+    [12, [3, 2], 7],
+  ])('%i events make rows %j and %i more', (count, rows, more) => {
+    const result = dotsOf(Array.from({ length: count }, () => 'a'))
+    expect(result.rows.map((row) => row.length)).toEqual(rows)
+    expect(result.more).toBe(more)
+  })
+
+  test('keeps the calendar order across rows', () => {
+    expect(dotsOf(['a', 'a', 'a', 'b']).rows).toEqual([['a', 'a', 'a'], ['b']])
+  })
+})
+
+describe('dayBackground', () => {
+  test('is empty with no colors', () => {
+    expect(dayBackground([])).toBe('')
+  })
+
+  test('is a flat tint for one color, or for the same color twice', () => {
+    expect(dayBackground(['red'])).toBe('color-mix(in srgb, red 30%, transparent)')
+    expect(dayBackground(['red', 'red'])).toBe('color-mix(in srgb, red 30%, transparent)')
+  })
+
+  test('blends several calendars in order', () => {
+    expect(dayBackground(['red', 'blue'])).toBe(
+      'linear-gradient(135deg, color-mix(in srgb, red 30%, transparent), color-mix(in srgb, blue 30%, transparent))',
     )
   })
 })

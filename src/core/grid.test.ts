@@ -52,6 +52,28 @@ describe('buildMonthGrid', () => {
     expect(month(2026, 1, 1).some((cell) => cell.isToday)).toBe(false)
   })
 
+  test('eventCalendarIds has one entry per event, grouped by calendar order', () => {
+    const event = (calendarId: string, startDay: string, endDay = startDay) => ({
+      calendarId,
+      startDay,
+      endDay,
+    })
+    const cells = buildWeekGrid({
+      anchorKey: '2026-11-09',
+      firstWeekday: 1,
+      todayKey: '2026-11-09',
+      events: [
+        event('a', '2026-11-09'),
+        event('b', '2026-11-09'),
+        event('a', '2026-11-09'),
+        event('b', '2026-11-08', '2026-11-10'),
+      ],
+    })
+    expect(cells[0]?.eventCalendarIds).toEqual(['a', 'a', 'b', 'b'])
+    expect(cells[1]?.eventCalendarIds).toEqual(['b'])
+    expect(cells[2]?.eventCalendarIds).toEqual([])
+  })
+
   test('calendarIds follow input calendar order and are unique', () => {
     const cells = month(2026, 11, 1, [
       ev('b', '2026-11-20'),

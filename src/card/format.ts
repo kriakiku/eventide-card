@@ -135,20 +135,38 @@ export function groupTitle(
   return title.charAt(0).toLocaleUpperCase(language) + title.slice(1)
 }
 
-function hour12Of(timeFormat: string | undefined): boolean | undefined {
-  if (timeFormat === '12') return true
-  if (timeFormat === '24') return false
+function hourCycleOf(timeFormat: string | undefined): 'h12' | 'h23' | undefined {
+  if (timeFormat === '12') return 'h12'
+  if (timeFormat === '24') return 'h23'
   return undefined
 }
 
 export function clockFormatter(locale: LocaleLike, timeZone: string): Intl.DateTimeFormat {
-  const hour12 = hour12Of(locale.time_format)
+  const hourCycle = hourCycleOf(locale.time_format)
   return new Intl.DateTimeFormat(locale.language, {
     hour: '2-digit',
     minute: '2-digit',
     timeZone,
-    ...(hour12 === undefined ? {} : { hour12 }),
+    ...(hourCycle === undefined ? {} : { hourCycle }),
   })
+}
+
+export function dayBackground(colors: readonly string[]): string {
+  const stops = [...new Set(colors)].map((color) => `color-mix(in srgb, ${color} 30%, transparent)`)
+  if (stops.length < 2) return stops[0] ?? ''
+  return `linear-gradient(135deg, ${stops.join(', ')})`
+}
+
+const DOTS_PER_ROW = 3
+const MAX_DOTS = DOTS_PER_ROW * 2
+
+export function dotsOf(calendarIds: readonly string[]): { rows: string[][]; more: number } {
+  const fits = calendarIds.length <= MAX_DOTS
+  const shown = calendarIds.slice(0, fits ? MAX_DOTS : MAX_DOTS - 1)
+  const rows = [shown.slice(0, DOTS_PER_ROW), shown.slice(DOTS_PER_ROW)].filter(
+    (row) => row.length > 0,
+  )
+  return { rows, more: calendarIds.length - shown.length }
 }
 
 export const WEEKDAYS = [

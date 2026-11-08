@@ -9,7 +9,9 @@ import {
 import { CalendarFeed, feedWindow, type FeedHass } from './card/feed.ts'
 import {
   clockFormatter,
+  dayBackground,
   dayOfMonth,
+  dotsOf,
   etaLines,
   groupTitle,
   monthTitle,
@@ -20,7 +22,7 @@ import {
   type LocaleLike,
 } from './card/format.ts'
 import { cardStyles } from './card/styles.ts'
-import { buildAgenda } from './core/agenda.ts'
+import { buildAgenda, dedupeEvents } from './core/agenda.ts'
 import { buildMonthGrid, buildWeekGrid } from './core/grid.ts'
 import { applyRules } from './core/rules.ts'
 import { addDays, dayKeyOf } from './core/timezone.ts'
@@ -181,28 +183,51 @@ export class EventideCard extends LitElement {
   }
 
   #cell(cell: GridCell, context: RenderContext): TemplateResult {
-    const first = cell.calendarIds[0]
+    const background = cell.inMonth
+      ? dayBackground(cell.calendarIds.flatMap((id) => context.colors.get(id) ?? []))
+      : ''
     const classes = [
       'day',
       cell.isToday ? 'today' : '',
       cell.inMonth ? '' : 'out',
-      first && cell.inMonth ? 'busy' : '',
+      background ? 'busy' : '',
       cell.dayKey === this.selected ? 'selected' : '',
     ]
-    const color = first ? context.colors.get(first) : undefined
+    const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     return html`<button
       class=${classes.filter(Boolean).join(' ')}
-      style=${color ? `--c:${color}` : ''}
+      style=${background ? `--bg:${background}` : ''}
       @click=${() => this.#toggleDay(cell.dayKey)}
     >
-      <span>${dayOfMonth(cell.dayKey)}</span>
+      <span class="num">${dayOfMonth(cell.dayKey)}</span>
+      ${
+        rows.length > 0
+          ? html`<span class="dots">
+              ${rows.map(
+                (row, index) =>
+                  html`<span class="dot-row">
+                    ${row.map(
+                      (id) => html`<i class="dot" style="--c:${context.colors.get(id) ?? ''}"></i>`,
+                    )}
+                    ${
+                      more > 0 && index === rows.length - 1
+                        ? html`<span class="more">+${more}</span>`
+                        : nothing
+                    }
+                  </span>`,
+              )}
+            </span>`
+          : nothing
+      }
     </button>`
   }
 
   #calendar(view: 'month' | 'week', context: RenderContext, firstWeekday: number): TemplateResult {
     const { todayKey, language } = context
     const anchorKey = this.anchor ?? todayKey
-    const options = { firstWeekday, todayKey, events: this.#feed.events }
+    const { dedupe } = context.config
+    const events = dedupe ? dedupeEvents(this.#feed.events) : this.#feed.events
+    const options = { firstWeekday, todayKey, events }
     const cells =
       view === 'week'
         ? buildWeekGrid({ anchorKey, ...options })
@@ -290,7 +315,10 @@ export class EventideCard extends LitElement {
       config,
       language,
       todayKey: dayKeyOf(this.now, timeZone),
-      clock: clockFormatter(hass.locale, timeZone),
+      clock: clockFormatter(
+        { ...hass.locale, time_format: config.timeFormat ?? hass.locale.time_format ?? 'language' },
+        timeZone,
+      ),
       strings: stringsFor(language),
       colors: new Map(config.calendars.map(({ entity, color }) => [entity, color])),
     }
@@ -306,7 +334,10 @@ export class EventideCard extends LitElement {
     const view = this.#view(config)
     const wide = view !== 'none' && this.width >= WIDE_WIDTH
     return html`<ha-card>
-      <div class="layout ${wide ? 'wide' : ''}">
+      <div
+        class="layout ${wide ? 'wide' : ''}"
+        style=${config.todayColor ? `--eventide-today:${config.todayColor}` : ''}
+      >
         ${
           view === 'none'
             ? nothing

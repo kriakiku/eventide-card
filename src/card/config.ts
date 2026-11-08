@@ -20,6 +20,8 @@ export interface EventideConfig {
   limit?: number
   dedupe?: boolean
   first_weekday?: string
+  time_format?: string | number
+  today_color?: string
   rules?: Rule[]
 }
 
@@ -37,12 +39,15 @@ export interface ResolvedConfig {
   limit: number
   dedupe: boolean
   firstWeekday?: string
+  timeFormat?: string
+  todayColor?: string
   rules: CompiledRules
 }
 
 const MINUTE = 60_000
 const VIEWS: readonly View[] = ['auto', 'month', 'week', 'none']
 const PALETTE = ['#7F77DD', '#E0704A', '#2FA98C', '#D4537E', '#378ADD', '#BA7517']
+const TIME_FORMATS = ['12', '24', 'language']
 export const DEFAULT_LIMIT = 5
 
 function count(name: string, value: unknown, fallback: number): number {
@@ -79,6 +84,14 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
   ) {
     throw new Error(`first_weekday must be language or one of ${WEEKDAYS.join(', ')}`)
   }
+  const timeFormat = raw.time_format === undefined ? undefined : String(raw.time_format)
+  if (timeFormat !== undefined && !TIME_FORMATS.includes(timeFormat)) {
+    throw new Error(`time_format must be one of ${TIME_FORMATS.join(', ')}`)
+  }
+  const todayColor = raw.today_color
+  if (todayColor !== undefined && (typeof todayColor !== 'string' || todayColor === '')) {
+    throw new Error('today_color must be a color')
+  }
   return {
     calendars: raw.calendars.map(resolveCalendar),
     view,
@@ -87,6 +100,8 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
     limit: count('limit', raw.limit, DEFAULT_LIMIT),
     dedupe: raw.dedupe ?? true,
     ...(firstWeekday === undefined ? {} : { firstWeekday }),
+    ...(timeFormat === undefined ? {} : { timeFormat }),
+    ...(todayColor === undefined ? {} : { todayColor }),
     rules: compileRules(raw.rules ?? []),
   }
 }

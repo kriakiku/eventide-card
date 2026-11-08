@@ -123,7 +123,51 @@ describe('eventide-card', () => {
     expect(root?.querySelector('.head .title')?.textContent).toContain('November 2026')
     expect(root?.querySelector('.dow')?.textContent).toBe('Mon')
     expect(root?.querySelectorAll('.day')).toHaveLength(42)
-    expect(root?.querySelector('.day.today')?.textContent?.trim()).toBe('9')
+    expect(root?.querySelector('.day.today .num')?.textContent?.trim()).toBe('9')
+    element.remove()
+  })
+
+  test('draws a dot per event in up to two rows', async () => {
+    const element = await mount()
+    const cell = (day: string) =>
+      [...(element.shadowRoot?.querySelectorAll('.day:not(.out)') ?? [])].find(
+        (item) => item.querySelector('.num')?.textContent?.trim() === day,
+      )
+    expect(cell('9')?.querySelectorAll('.dot')).toHaveLength(5)
+    expect(cell('9')?.querySelectorAll('.dot-row')).toHaveLength(2)
+    expect(cell('9')?.querySelector('.more')).toBeNull()
+    expect(cell('12')?.querySelectorAll('.dot')).toHaveLength(1)
+    expect(cell('12')?.querySelector('.more')).toBeNull()
+    expect(cell('13')?.querySelector('.dots')).toBeNull()
+    element.remove()
+  })
+
+  test('tints a day by its calendars and blends several', async () => {
+    const element = await mount({
+      calendars: [
+        { entity: 'calendar.work', color: 'red' },
+        { entity: 'calendar.home', color: 'blue' },
+      ],
+    })
+    const style = (day: string) =>
+      [...(element.shadowRoot?.querySelectorAll('.day:not(.out)') ?? [])]
+        .find((item) => item.querySelector('.num')?.textContent?.trim() === day)
+        ?.getAttribute('style')
+    expect(style('9')).toContain('linear-gradient')
+    expect(style('12')).toContain('color-mix(in srgb, red 30%')
+    expect(style('12')).not.toContain('linear-gradient')
+    expect(style('13') ?? '').toBe('')
+    element.remove()
+  })
+
+  test('time_format and today_color override the defaults', async () => {
+    const element = await mount({ time_format: 12, today_color: 'purple' })
+    expect(rowByTitle(element, 'Sprint demo')?.querySelector('.sub')?.textContent).toMatch(
+      /10:30\sAM/,
+    )
+    expect(element.shadowRoot?.querySelector('.layout')?.getAttribute('style')).toContain(
+      '--eventide-today:purple',
+    )
     element.remove()
   })
 
@@ -151,7 +195,7 @@ describe('eventide-card', () => {
   test('picking a day filters the agenda and a second tap clears it', async () => {
     const element = await mount()
     const day12 = [...(element.shadowRoot?.querySelectorAll<HTMLElement>('.day') ?? [])].find(
-      (cell) => cell.textContent?.trim() === '12',
+      (cell) => cell.querySelector('.num')?.textContent?.trim() === '12',
     )
     day12?.click()
     await element.updateComplete

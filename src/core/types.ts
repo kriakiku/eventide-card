@@ -93,6 +93,7 @@ export interface GridCell {
   inMonth: boolean
   isToday: boolean
   calendarIds: string[]
+  eventCalendarIds: string[]
 }
 
 export interface Rule {

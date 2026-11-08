@@ -69,6 +69,12 @@ It's meant to be light enough for a low-powered wall tablet. The card runs no co
 </tr>
 </table>
 
+## The month at a glance
+
+A day with events is tinted in the color of its calendar. When several calendars share a day, their colors blend into a gradient, so a mixed day is easy to tell apart.
+
+Each event also gets a dot in its calendar's color. Up to three dots sit in one row and up to six in two rows, and past that the card shows five dots and a small `+N`, so a busy day never reaches the edges of its cell.
+
 ## Details that are already handled
 
 The core is pure TypeScript with no runtime dependencies. It's covered by tests across time zones that are hard to get right, such as those with a DST change at midnight or a 30-minute shift.
@@ -114,6 +120,8 @@ rules:
 | `limit`         | `5`             | How many timed events to show. Finished ones count.                   |
 | `dedupe`        | `true`          | Show an event found in several calendars only once.                   |
 | `first_weekday` | your HA setting | First day of the week: `monday` to `sunday`, or `language`.           |
+| `time_format`   | your HA setting | `24`, `12` or `language`.                                             |
+| `today_color`   | theme primary   | The color of the current day in the grid.                             |
 | `rules`         | none            | Patterns that set `icon` and `color` by title, first match per field. |
 
 ## Roadmap

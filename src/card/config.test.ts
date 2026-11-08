@@ -41,6 +41,8 @@ describe('resolveConfig', () => {
     ['an infinite linger', { calendars, linger: Number.POSITIVE_INFINITY }],
     ['a negative limit', { calendars, limit: -1 }],
     ['an unknown first weekday', { calendars, first_weekday: 'mon' }],
+    ['an unknown time format', { calendars, time_format: 13 }],
+    ['an empty today color', { calendars, today_color: '' }],
   ])('rejects %s', (_name, config) => {
     expect(() => resolveConfig(config as never)).toThrow()
   })
@@ -49,6 +51,12 @@ describe('resolveConfig', () => {
     expect(resolveConfig({ calendars, first_weekday: 'monday' }).firstWeekday).toBe('monday')
     expect(resolveConfig({ calendars, first_weekday: 'language' }).firstWeekday).toBe('language')
     expect(resolveConfig({ calendars }).firstWeekday).toBeUndefined()
+  })
+
+  test('accepts a time format as a number or a string', () => {
+    expect(resolveConfig({ calendars, time_format: 24 }).timeFormat).toBe('24')
+    expect(resolveConfig({ calendars, time_format: '12' }).timeFormat).toBe('12')
+    expect(resolveConfig({ calendars }).timeFormat).toBeUndefined()
   })
 
   test('reports an invalid rule without failing', () => {

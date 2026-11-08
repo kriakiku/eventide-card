@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { dotsOf } from '../src/card/format.ts'
 import {
   buildAgenda,
   buildMonthGrid,
@@ -75,10 +76,18 @@ const events = [
   ...fixture('home', 'Language class', 9, '14:00', '15:00'),
   ...fixture('home', 'Dentist', 9, '17:00', '17:45'),
   ...fixture('work', 'Planning', 12, '15:00', '16:00'),
+  ...fixture('home', 'Call', 12, '18:00', '18:30'),
   ...fixture('home', 'Concert', 14, '19:00', '21:00'),
   ...fixture('work', 'Retro', 17, '11:00', '12:00'),
   ...fixture('work', 'Quarterly review', 24, '10:00', '11:00'),
   ...fixture('home', 'Lunch', 27, '12:00', '13:00'),
+  ...['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].flatMap((name, index) =>
+    fixture(index < 5 ? 'work' : 'home', `Busy ${name}`, 19, '09:00', '09:30'),
+  ),
+  ...fixture('work', 'One', 5, '09:00', '09:30'),
+  ...fixture('home', 'Two', 5, '10:00', '10:30'),
+  ...fixture('work', 'Three', 5, '11:00', '11:30'),
+  ...fixture('home', 'Four', 5, '12:00', '12:30'),
 ]
 
 const agendaItems = (): AgendaItem[] =>
@@ -185,14 +194,9 @@ function renderCells(
     const row = Math.floor(index / 7)
     const cx = x + column * cellW
     const cy = y + 24 + row * cellH
-    const first = cell.calendarIds[0]
     if (cell.isToday) {
       parts.push(
         `<rect x="${cx + 3}" y="${cy + 3}" width="${cellW - 6}" height="${cellH - 6}" rx="12" fill="${ACCENT}"/>`,
-      )
-    } else if (first && cell.inMonth) {
-      parts.push(
-        `<rect x="${cx + 3}" y="${cy + 3}" width="${cellW - 6}" height="${cellH - 6}" rx="12" fill="${COLORS[first] ?? WORK}" opacity="0.24"/>`,
       )
     }
     const cls = cell.isToday ? 'on' : cell.inMonth ? 't1' : 't3'
@@ -200,13 +204,45 @@ function renderCells(
     parts.push(
       text(
         cx + cellW / 2,
-        cy + cellH / 2 + 5,
+        cy + cellH / 2 - 3,
         cls,
         14,
         String(Number(cell.dayKey.slice(8))),
         `text-anchor="middle"${weight}`,
       ),
     )
+    if (cell.inMonth && !cell.isToday && cell.calendarIds.length > 0) {
+      const colors = cell.calendarIds.map((id) => COLORS[id] ?? WORK)
+      const gradientId = `day-${cell.dayKey}`
+      if (colors.length > 1) {
+        const stops = colors
+          .map((color, stop) => {
+            const offset = (stop / (colors.length - 1)) * 100
+            return `<stop offset="${offset}%" stop-color="${color}"/>`
+          })
+          .join('')
+        parts.push(
+          `<linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">${stops}</linearGradient>`,
+        )
+      }
+      const paint = colors.length > 1 ? `url(#${gradientId})` : colors[0]
+      parts.push(
+        `<rect x="${cx + 3}" y="${cy + 3}" width="${cellW - 6}" height="${cellH - 6}" rx="12" fill="${paint}" opacity="0.26"/>`,
+      )
+    }
+    const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
+    rows.forEach((dotRow, rowIndex) => {
+      const dotY = cy + cellH / 2 + 10 + rowIndex * 9
+      dotRow.forEach((id, dot) => {
+        const dotX = cx + cellW / 2 + (dot - (dotRow.length - 1) / 2) * 10
+        const fill = cell.isToday ? '#FFFFFF' : (COLORS[id] ?? WORK)
+        parts.push(`<circle cx="${dotX}" cy="${dotY}" r="3" fill="${fill}"/>`)
+      })
+      if (more > 0 && rowIndex === rows.length - 1) {
+        const textX = cx + cellW / 2 + dotRow.length * 5 + 2
+        parts.push(text(textX, dotY + 3.5, cell.isToday ? 'on' : 't2', 10, `+${more}`))
+      }
+    })
   })
   return parts.join('')
 }
