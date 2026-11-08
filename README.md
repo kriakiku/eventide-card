@@ -6,14 +6,13 @@
 
 [![CI](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml/badge.svg)](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-7F77DD.svg)](https://github.com/kriakiku/eventide-card/blob/main/LICENSE)
-![Status: pre-release](https://img.shields.io/badge/status-pre--release-E0704A.svg)
 
 <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/hero.svg" alt="Eventide card with a month grid next to an agenda of finished, running and upcoming events" width="760">
 
 </div>
 
-> [!IMPORTANT]
-> Eventide is young and the configuration can still change between releases. The images on this page are design previews from [a script](https://github.com/kriakiku/eventide-card/blob/main/scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
+> [!NOTE]
+> The images on this page are design previews from [a script](https://github.com/kriakiku/eventide-card/blob/main/scripts/render-docs.ts): the card images use the output of the real core, and the animation is drawn by hand.
 
 ## Install
 
@@ -239,9 +238,6 @@ That gives `po 3 val. 52 min.`, `liko 7 min.` and `baigėsi prieš 23 min.`.
 Setting `starts_in` or `ended_ago` also switches that phrase to exact hours and minutes.
 
 ## Configuration
-
-> [!NOTE]
-> Until 1.0 the configuration may change between releases.
 
 ```yaml
 type: custom:eventide-card
