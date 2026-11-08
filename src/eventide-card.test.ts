@@ -160,6 +160,40 @@ describe('eventide-card', () => {
     element.remove()
   })
 
+  test('the clock is hidden by default and shows the time when enabled', async () => {
+    const plain = await mount()
+    expect(plain.shadowRoot?.querySelector('.clock')).toBeNull()
+    plain.remove()
+    const element = await mount({ show_clock: true })
+    expect(element.shadowRoot?.querySelector('.calendar .clock')?.textContent).toBe('10:08')
+    element.remove()
+  })
+
+  test('show_navigation hides the month buttons', async () => {
+    const plain = await mount()
+    expect(plain.shadowRoot?.querySelectorAll('.nav')).toHaveLength(2)
+    plain.remove()
+    const element = await mount({ show_navigation: false })
+    expect(element.shadowRoot?.querySelectorAll('.nav')).toHaveLength(0)
+    expect(element.shadowRoot?.querySelector('.head .title')).not.toBeNull()
+    element.remove()
+  })
+
+  test('fades only the edges that have more content past them', async () => {
+    const element = await mount()
+    const agenda = element.shadowRoot?.querySelector('.agenda') as HTMLElement
+    Object.defineProperty(agenda, 'clientHeight', { value: 500, configurable: true })
+    Object.defineProperty(agenda, 'scrollHeight', { value: 900, configurable: true })
+    agenda.dispatchEvent(new Event('scroll'))
+    expect(agenda.className).toContain('fade-bottom')
+    expect(agenda.className).not.toContain('fade-top')
+    agenda.scrollTop = 400
+    agenda.dispatchEvent(new Event('scroll'))
+    expect(agenda.className).toContain('fade-top')
+    expect(agenda.className).not.toContain('fade-bottom')
+    element.remove()
+  })
+
   test('time_format and today_color override the defaults', async () => {
     const element = await mount({ time_format: 12, today_color: 'purple' })
     expect(rowByTitle(element, 'Sprint demo')?.querySelector('.sub')?.textContent).toMatch(

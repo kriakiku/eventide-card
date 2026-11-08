@@ -63,6 +63,8 @@ The layout follows the width of the card rather than the device:
 - **Medium:** the month grid above the agenda.
 - **Narrow:** a week strip above the agenda, for phones and wall panels.
 
+When the agenda is longer than the card, its top and bottom edges fade out smoothly wherever there is more to scroll to.
+
 It's meant to be light enough for a low-powered wall tablet. The card runs no continuous animations, and one timer recalculates the states every 30 seconds without touching the network.
 
 </td>
@@ -74,6 +76,14 @@ It's meant to be light enough for a low-powered wall tablet. The card runs no co
 A day with events is tinted in the color of its calendar. When several calendars share a day, their colors blend into a gradient, so a mixed day is easy to tell apart.
 
 Each event also gets a dot in its calendar's color. Up to three dots sit in one row and up to six in two rows, and past that the card shows five dots and a small `+N`, so a busy day never reaches the edges of its cell.
+
+## Optional clock
+
+Turn on `show_clock` to put the current time under the calendar, centered in the free space. It's off by default and follows your 12 or 24-hour setting.
+
+<p align="center">
+  <img src="docs/clock.svg" alt="The month grid with a large clock centered below it" width="360">
+</p>
 
 ## Details that are already handled
 
@@ -111,18 +121,20 @@ rules:
     color: '#E0704A'
 ```
 
-| Option          | Default         | Description                                                           |
-| --------------- | --------------- | --------------------------------------------------------------------- |
-| `calendars`     | none            | The calendar entities to show, each with an optional `color`.         |
-| `view`          | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.            |
-| `lead_time`     | `60`            | Minutes before the start when the row begins to fill. `0` disables.   |
-| `linger`        | `30`            | Minutes a finished timed event stays in the list. `0` disables.       |
-| `limit`         | `5`             | How many timed events to show. Finished ones count.                   |
-| `dedupe`        | `true`          | Show an event found in several calendars only once.                   |
-| `first_weekday` | your HA setting | First day of the week: `monday` to `sunday`, or `language`.           |
-| `time_format`   | your HA setting | `24`, `12` or `language`.                                             |
-| `today_color`   | theme primary   | The color of the current day in the grid.                             |
-| `rules`         | none            | Patterns that set `icon` and `color` by title, first match per field. |
+| Option            | Default         | Description                                                           |
+| ----------------- | --------------- | --------------------------------------------------------------------- |
+| `calendars`       | none            | The calendar entities to show, each with an optional `color`.         |
+| `view`            | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.            |
+| `lead_time`       | `60`            | Minutes before the start when the row begins to fill. `0` disables.   |
+| `linger`          | `30`            | Minutes a finished timed event stays in the list. `0` disables.       |
+| `limit`           | `5`             | How many timed events to show. Finished ones count.                   |
+| `dedupe`          | `true`          | Show an event found in several calendars only once.                   |
+| `first_weekday`   | your HA setting | First day of the week: `monday` to `sunday`, or `language`.           |
+| `time_format`     | your HA setting | `24`, `12` or `language`.                                             |
+| `today_color`     | theme primary   | The color of the current day in the grid.                             |
+| `show_clock`      | `false`         | Show the current time under the calendar.                             |
+| `show_navigation` | `true`          | Show the buttons that switch months or weeks.                         |
+| `rules`           | none            | Patterns that set `icon` and `color` by title, first match per field. |
 
 ## Roadmap
 

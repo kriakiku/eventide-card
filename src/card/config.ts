@@ -22,6 +22,8 @@ export interface EventideConfig {
   first_weekday?: string
   time_format?: string | number
   today_color?: string
+  show_clock?: boolean
+  show_navigation?: boolean
   rules?: Rule[]
 }
 
@@ -41,6 +43,8 @@ export interface ResolvedConfig {
   firstWeekday?: string
   timeFormat?: string
   todayColor?: string
+  showClock: boolean
+  showNavigation: boolean
   rules: CompiledRules
 }
 
@@ -102,6 +106,8 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
     ...(firstWeekday === undefined ? {} : { firstWeekday }),
     ...(timeFormat === undefined ? {} : { timeFormat }),
     ...(todayColor === undefined ? {} : { todayColor }),
+    showClock: raw.show_clock ?? false,
+    showNavigation: raw.show_navigation ?? true,
     rules: compileRules(raw.rules ?? []),
   }
 }

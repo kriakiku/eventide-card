@@ -53,6 +53,14 @@ describe('resolveConfig', () => {
     expect(resolveConfig({ calendars }).firstWeekday).toBeUndefined()
   })
 
+  test('the clock is off and the navigation is on by default', () => {
+    expect(resolveConfig({ calendars })).toMatchObject({ showClock: false, showNavigation: true })
+    expect(resolveConfig({ calendars, show_clock: true, show_navigation: false })).toMatchObject({
+      showClock: true,
+      showNavigation: false,
+    })
+  })
+
   test('accepts a time format as a number or a string', () => {
     expect(resolveConfig({ calendars, time_format: 24 }).timeFormat).toBe('24')
     expect(resolveConfig({ calendars, time_format: '12' }).timeFormat).toBe('12')

@@ -6,6 +6,7 @@ import {
   dayBackground,
   dotsOf,
   etaLines,
+  fadeEdges,
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
@@ -115,6 +116,18 @@ describe('hour cycles and dots', () => {
 
   test('keeps the calendar order across rows', () => {
     expect(dotsOf(['a', 'a', 'a', 'b']).rows).toEqual([['a', 'a', 'a'], ['b']])
+  })
+})
+
+describe('fadeEdges', () => {
+  test.each([
+    ['content fits', 0, 500, 500, false, false],
+    ['at the top of a long list', 0, 500, 900, false, true],
+    ['in the middle', 200, 500, 900, true, true],
+    ['at the very end', 400, 500, 900, true, false],
+    ['within a pixel of the end', 399.5, 500, 900, true, false],
+  ])('%s', (_name, scrollTop, clientHeight, scrollHeight, top, bottom) => {
+    expect(fadeEdges(scrollTop, clientHeight, scrollHeight)).toEqual({ top, bottom })
   })
 })
 

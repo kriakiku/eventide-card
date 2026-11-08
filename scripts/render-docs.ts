@@ -333,6 +333,39 @@ function states(): string {
 const fade = (name: string, on: number, off: number) =>
   `@keyframes ${name} { 0%, ${on - 0.01}% { opacity: 0 } ${on}%, ${off - 0.01}% { opacity: 1 } ${off}%, 100% { opacity: 0 } }`
 
+function clockPreview(): string {
+  const width = 420
+  const cellW = 54
+  const cellH = 52
+  const cells = buildMonthGrid({
+    year: 2026,
+    month: 11,
+    firstWeekday: 1,
+    todayKey: '2026-11-09',
+    events,
+  })
+  const gridHeight = 24 + (cells.length / 7) * cellH
+  const height = 66 + gridHeight + 84
+  return svg(
+    width,
+    height,
+    'Eventide month grid with the optional clock centered below it',
+    [
+      `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="24" class="card"/>`,
+      text(28, 46, 't1', 18, 'November 2026', 'font-weight="600"'),
+      renderCells(cells, (width - cellW * 7) / 2, 66, cellW, cellH),
+      text(
+        width / 2,
+        66 + gridHeight + 56,
+        't1',
+        44,
+        clock(NOW),
+        'text-anchor="middle" font-weight="600"',
+      ),
+    ].join(''),
+  )
+}
+
 function tide(): string {
   const width = 720
   const height = 104
@@ -399,6 +432,7 @@ function tide(): string {
 
 mkdirSync(OUT, { recursive: true })
 const images: Record<string, string> = {
+  'clock.svg': clockPreview(),
   'hero.svg': hero(),
   'panel.svg': panel(),
   'states.svg': states(),

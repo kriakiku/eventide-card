@@ -17,11 +17,17 @@ export const cardStyles = css`
   .layout {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     gap: 16px;
     height: 100%;
   }
+  .layout.list-only {
+    grid-template-rows: minmax(0, 1fr);
+  }
   .layout.wide {
     grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    grid-template-rows: minmax(0, 1fr);
+    max-height: calc(100vh - 32px);
     gap: 24px;
   }
   button {
@@ -132,10 +138,41 @@ export const cardStyles = css`
   .day.out {
     color: var(--disabled-text-color, var(--secondary-text-color));
   }
+  .calendar {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .clock {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0;
+    font-size: 44px;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
   .agenda {
+    --fade-top: 0px;
+    --fade-bottom: 0px;
     min-width: 0;
     overflow-y: auto;
     scrollbar-width: none;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)),
+      transparent 100%
+    );
+  }
+  .agenda.fade-top {
+    --fade-top: 36px;
+  }
+  .agenda.fade-bottom {
+    --fade-bottom: 56px;
   }
   .group {
     font-size: 16px;

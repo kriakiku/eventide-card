@@ -157,6 +157,14 @@ export function dayBackground(colors: readonly string[]): string {
   return `linear-gradient(135deg, ${stops.join(', ')})`
 }
 
+export function fadeEdges(
+  scrollTop: number,
+  clientHeight: number,
+  scrollHeight: number,
+): { top: boolean; bottom: boolean } {
+  return { top: scrollTop > 1, bottom: scrollTop + clientHeight < scrollHeight - 1 }
+}
+
 const DOTS_PER_ROW = 3
 const MAX_DOTS = DOTS_PER_ROW * 2
 

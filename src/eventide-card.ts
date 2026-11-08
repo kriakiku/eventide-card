@@ -13,6 +13,7 @@ import {
   dayOfMonth,
   dotsOf,
   etaLines,
+  fadeEdges,
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
@@ -75,11 +76,13 @@ export class EventideCard extends LitElement {
   declare selected: string | null
 
   #feed = new CalendarFeed(() => this.requestUpdate())
-  #timer: ReturnType<typeof setInterval> | undefined
+  #timer: ReturnType<typeof setTimeout> | undefined
   #resize = new ResizeObserver(([entry]) => {
     if (entry) this.width = Math.round(entry.contentRect.width)
+    this.#updateFade()
   })
   #onVisibility = () => this.#syncTimer()
+  #onScroll = () => this.#updateFade()
 
   constructor() {
     super()
@@ -123,19 +126,39 @@ export class EventideCard extends LitElement {
     super.disconnectedCallback()
     this.#resize.disconnect()
     document.removeEventListener('visibilitychange', this.#onVisibility)
-    clearInterval(this.#timer)
+    clearTimeout(this.#timer)
     this.#timer = undefined
     this.#feed.stop()
   }
 
   #syncTimer(): void {
-    clearInterval(this.#timer)
+    clearTimeout(this.#timer)
     this.#timer = undefined
     if (document.hidden) return
     this.now = Date.now()
-    this.#timer = setInterval(() => {
-      this.now = Date.now()
-    }, TICK_MS)
+    this.#schedule()
+  }
+
+  #schedule(): void {
+    this.#timer = setTimeout(
+      () => {
+        this.now = Date.now()
+        this.#schedule()
+      },
+      TICK_MS - (Date.now() % TICK_MS),
+    )
+  }
+
+  #updateFade(): void {
+    const agenda = this.renderRoot.querySelector<HTMLElement>('.agenda')
+    if (!agenda) return
+    const { top, bottom } = fadeEdges(agenda.scrollTop, agenda.clientHeight, agenda.scrollHeight)
+    agenda.classList.toggle('fade-top', top)
+    agenda.classList.toggle('fade-bottom', bottom)
+  }
+
+  protected override updated(): void {
+    this.#updateFade()
   }
 
   protected override shouldUpdate(changed: PropertyValues<this>): boolean {
@@ -241,14 +264,26 @@ export class EventideCard extends LitElement {
         <button class="title" @click=${() => this.#reset()}>
           ${monthTitle(anchorKey, language)}
         </button>
-        <div>
-          <button class="nav" aria-label="Previous" @click=${() => this.#shift(view, todayKey, -1)}>
-            <ha-icon icon="mdi:chevron-left"></ha-icon>
-          </button>
-          <button class="nav" aria-label="Next" @click=${() => this.#shift(view, todayKey, 1)}>
-            <ha-icon icon="mdi:chevron-right"></ha-icon>
-          </button>
-        </div>
+        ${
+          context.config.showNavigation
+            ? html`<div>
+                <button
+                  class="nav"
+                  aria-label="Previous"
+                  @click=${() => this.#shift(view, todayKey, -1)}
+                >
+                  <ha-icon icon="mdi:chevron-left"></ha-icon>
+                </button>
+                <button
+                  class="nav"
+                  aria-label="Next"
+                  @click=${() => this.#shift(view, todayKey, 1)}
+                >
+                  <ha-icon icon="mdi:chevron-right"></ha-icon>
+                </button>
+              </div>`
+            : nothing
+        }
       </div>
       <div class="grid">
         ${cells
@@ -256,6 +291,11 @@ export class EventideCard extends LitElement {
           .map(({ dayKey }) => html`<div class="dow">${weekdayShort(dayKey, language)}</div>`)}
         ${cells.map((cell) => this.#cell(cell, context))}
       </div>
+      ${
+        context.config.showClock
+          ? html`<div class="clock">${context.clock.format(this.now)}</div>`
+          : nothing
+      }
     </div>`
   }
 
@@ -335,7 +375,7 @@ export class EventideCard extends LitElement {
     const wide = view !== 'none' && this.width >= WIDE_WIDTH
     return html`<ha-card>
       <div
-        class="layout ${wide ? 'wide' : ''}"
+        class="layout ${wide ? 'wide' : ''} ${view === 'none' ? 'list-only' : ''}"
         style=${config.todayColor ? `--eventide-today:${config.todayColor}` : ''}
       >
         ${
@@ -350,7 +390,7 @@ export class EventideCard extends LitElement {
                 }),
               )
         }
-        <div class="agenda">
+        <div class="agenda" @scroll=${this.#onScroll}>
           ${
             agenda.length > 0
               ? agenda.map((group) => this.#group(group, context))
