@@ -105,15 +105,16 @@ rules:
     color: '#E0704A'
 ```
 
-| Option      | Default | Description                                                           |
-| ----------- | ------- | --------------------------------------------------------------------- |
-| `calendars` | none    | The calendar entities to show, each with an optional `color`.         |
-| `view`      | `auto`  | `auto`, `month`, `week` or `none` to show only the agenda.            |
-| `lead_time` | `60`    | Minutes before the start when the row begins to fill. `0` disables.   |
-| `linger`    | `30`    | Minutes a finished timed event stays in the list. `0` disables.       |
-| `limit`     | `5`     | How many timed events to show. Finished ones count.                   |
-| `dedupe`    | `true`  | Show an event found in several calendars only once.                   |
-| `rules`     | none    | Patterns that set `icon` and `color` by title, first match per field. |
+| Option          | Default         | Description                                                           |
+| --------------- | --------------- | --------------------------------------------------------------------- |
+| `calendars`     | none            | The calendar entities to show, each with an optional `color`.         |
+| `view`          | `auto`          | `auto`, `month`, `week` or `none` to show only the agenda.            |
+| `lead_time`     | `60`            | Minutes before the start when the row begins to fill. `0` disables.   |
+| `linger`        | `30`            | Minutes a finished timed event stays in the list. `0` disables.       |
+| `limit`         | `5`             | How many timed events to show. Finished ones count.                   |
+| `dedupe`        | `true`          | Show an event found in several calendars only once.                   |
+| `first_weekday` | your HA setting | First day of the week: `monday` to `sunday`, or `language`.           |
+| `rules`         | none            | Patterns that set `icon` and `color` by title, first match per field. |
 
 ## Roadmap
 

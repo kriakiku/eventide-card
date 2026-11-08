@@ -151,7 +151,15 @@ export function clockFormatter(locale: LocaleLike, timeZone: string): Intl.DateT
   })
 }
 
-const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+export const WEEKDAYS = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+]
 
 interface WeekInfo {
   firstDay: number

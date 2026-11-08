@@ -37,7 +37,7 @@ export const cardStyles = css`
     margin-bottom: 8px;
   }
   .head .title {
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 600;
     padding: 8px 4px;
   }
@@ -56,7 +56,7 @@ export const cardStyles = css`
   }
   .dow {
     text-align: center;
-    font-size: 12px;
+    font-size: 15px;
     padding: 4px 0;
     color: var(--secondary-text-color);
   }
@@ -68,7 +68,7 @@ export const cardStyles = css`
     height: 66px;
     max-height: 13vh;
     min-height: 44px;
-    font-size: 15px;
+    font-size: 20px;
   }
   .day::before {
     content: '';
@@ -102,7 +102,7 @@ export const cardStyles = css`
     scrollbar-width: none;
   }
   .group {
-    font-size: 13px;
+    font-size: 16px;
     color: var(--secondary-text-color);
     margin: 14px 0 8px;
   }
@@ -116,8 +116,8 @@ export const cardStyles = css`
     align-items: center;
     gap: 12px;
     box-sizing: border-box;
-    height: 64px;
-    padding: 0 14px 0 9px;
+    height: 72px;
+    padding: 0 14px 0 10px;
     margin-bottom: 8px;
     border: 1.5px solid transparent;
     border-radius: 16px;
@@ -142,8 +142,8 @@ export const cardStyles = css`
   .tile {
     flex: none;
     box-sizing: border-box;
-    width: 42px;
-    height: 46px;
+    width: 48px;
+    height: 54px;
     text-align: center;
     border: 1.5px solid var(--c);
     border-radius: 11px;
@@ -152,16 +152,16 @@ export const cardStyles = css`
   }
   .tile small {
     display: block;
-    font-size: 11px;
-    line-height: 17px;
+    font-size: 13px;
+    line-height: 20px;
     color: var(--secondary-text-color);
     border-bottom: 1px solid var(--divider-color);
   }
   .tile b {
     display: block;
-    font-size: 16px;
+    font-size: 19px;
     font-weight: 600;
-    line-height: 25px;
+    line-height: 29px;
   }
   .text {
     flex: 1;
@@ -171,9 +171,9 @@ export const cardStyles = css`
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 15px;
+    font-size: 19px;
     font-weight: 600;
-    line-height: 20px;
+    line-height: 25px;
   }
   .summary span {
     white-space: nowrap;
@@ -182,11 +182,11 @@ export const cardStyles = css`
   }
   .summary ha-icon {
     flex: none;
-    --mdc-icon-size: 18px;
+    --mdc-icon-size: 22px;
   }
   .sub {
-    font-size: 12.5px;
-    line-height: 18px;
+    font-size: 15px;
+    line-height: 20px;
     color: var(--secondary-text-color);
     white-space: nowrap;
     overflow: hidden;
@@ -195,9 +195,9 @@ export const cardStyles = css`
   .eta {
     flex: none;
     text-align: right;
-    font-size: 12.5px;
+    font-size: 15px;
     font-weight: 600;
-    line-height: 16px;
+    line-height: 19px;
   }
   .row.finished .tile {
     border-color: var(--divider-color);
@@ -211,6 +211,7 @@ export const cardStyles = css`
     font-weight: 400;
   }
   .empty {
+    font-size: 18px;
     padding: 24px 4px;
     color: var(--secondary-text-color);
   }

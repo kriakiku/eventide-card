@@ -1,6 +1,7 @@
 import { DEFAULT_LEAD_MS, DEFAULT_LINGER_MS } from '../core/phase.ts'
 import { compileRules } from '../core/rules.ts'
 import type { CompiledRules, Rule } from '../core/types.ts'
+import { WEEKDAYS } from './format.ts'
 
 export type View = 'auto' | 'month' | 'week' | 'none'
 
@@ -18,6 +19,7 @@ export interface EventideConfig {
   linger?: number
   limit?: number
   dedupe?: boolean
+  first_weekday?: string
   rules?: Rule[]
 }
 
@@ -34,6 +36,7 @@ export interface ResolvedConfig {
   lingerMs: number
   limit: number
   dedupe: boolean
+  firstWeekday?: string
   rules: CompiledRules
 }
 
@@ -68,6 +71,14 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
   }
   const view = raw.view ?? 'auto'
   if (!VIEWS.includes(view)) throw new Error(`view must be one of ${VIEWS.join(', ')}`)
+  const firstWeekday = raw.first_weekday
+  if (
+    firstWeekday !== undefined &&
+    firstWeekday !== 'language' &&
+    !WEEKDAYS.includes(firstWeekday)
+  ) {
+    throw new Error(`first_weekday must be language or one of ${WEEKDAYS.join(', ')}`)
+  }
   return {
     calendars: raw.calendars.map(resolveCalendar),
     view,
@@ -75,6 +86,7 @@ export function resolveConfig(raw: EventideConfig): ResolvedConfig {
     lingerMs: count('linger', raw.linger, DEFAULT_LINGER_MS / MINUTE) * MINUTE,
     limit: count('limit', raw.limit, DEFAULT_LIMIT),
     dedupe: raw.dedupe ?? true,
+    ...(firstWeekday === undefined ? {} : { firstWeekday }),
     rules: compileRules(raw.rules ?? []),
   }
 }

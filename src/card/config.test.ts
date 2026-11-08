@@ -40,8 +40,15 @@ describe('resolveConfig', () => {
     ['a NaN lead time', { calendars, lead_time: Number.NaN }],
     ['an infinite linger', { calendars, linger: Number.POSITIVE_INFINITY }],
     ['a negative limit', { calendars, limit: -1 }],
+    ['an unknown first weekday', { calendars, first_weekday: 'mon' }],
   ])('rejects %s', (_name, config) => {
     expect(() => resolveConfig(config as never)).toThrow()
+  })
+
+  test('passes through the first weekday only when set', () => {
+    expect(resolveConfig({ calendars, first_weekday: 'monday' }).firstWeekday).toBe('monday')
+    expect(resolveConfig({ calendars, first_weekday: 'language' }).firstWeekday).toBe('language')
+    expect(resolveConfig({ calendars }).firstWeekday).toBeUndefined()
   })
 
   test('reports an invalid rule without failing', () => {

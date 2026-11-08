@@ -310,7 +310,14 @@ export class EventideCard extends LitElement {
         ${
           view === 'none'
             ? nothing
-            : this.#calendar(view, context, resolveFirstWeekday(hass.locale))
+            : this.#calendar(
+                view,
+                context,
+                resolveFirstWeekday({
+                  ...hass.locale,
+                  first_weekday: config.firstWeekday ?? hass.locale.first_weekday ?? 'language',
+                }),
+              )
         }
         <div class="agenda">
           ${

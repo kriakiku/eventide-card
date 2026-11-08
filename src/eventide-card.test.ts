@@ -127,6 +127,15 @@ describe('eventide-card', () => {
     element.remove()
   })
 
+  test('the first_weekday option overrides the locale', async () => {
+    const sunday = await mount({ first_weekday: 'sunday' })
+    expect(sunday.shadowRoot?.querySelector('.dow')?.textContent).toBe('Sun')
+    sunday.remove()
+    const saturday = await mount({ first_weekday: 'saturday' })
+    expect(saturday.shadowRoot?.querySelector('.dow')?.textContent).toBe('Sat')
+    saturday.remove()
+  })
+
   test('switches to a week strip and a stacked layout when narrow', async () => {
     const element = await mount()
     element.width = 360
