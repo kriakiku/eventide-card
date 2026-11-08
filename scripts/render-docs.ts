@@ -138,8 +138,8 @@ const events = [
   ...fixture('home', 'Four', 5, '12:00', '12:30'),
 ]
 
-const agendaItems = (source: NormalizedEvent[]): AgendaItem[] =>
-  buildAgenda(source, { nowMs: NOW, timeZone: ZONE, limit: 5 }).flatMap((group) => group.timed)
+const agendaItems = (source: NormalizedEvent[], limit = 5): AgendaItem[] =>
+  buildAgenda(source, { nowMs: NOW, timeZone: ZONE, limit }).flatMap((group) => group.timed)
 
 const escapeXml = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
@@ -172,7 +172,7 @@ const clock = (ms: number) => new Date(ms).toISOString().slice(11, 16)
 let clipId = 0
 
 const fit = (value: string, size: number, maxWidth: number) => {
-  const chars = Math.floor(maxWidth / (size * 0.56))
+  const chars = Math.floor(maxWidth / (size * 0.5))
   return value.length <= chars ? value : `${value.slice(0, Math.max(1, chars - 1)).trimEnd()}…`
 }
 
@@ -192,7 +192,7 @@ function renderRow(
   const eta = event.cancelled
     ? labelOf(locale.translation, 'cancelled')
     : etaText(item, locale.language, locale.translation)
-  const textWidth = width - 72 - 14 - eta.length * 15 * 0.54 - 10
+  const textWidth = width - 72 - 14 - eta.length * 15 * 0.49 - 10
   const parts = [
     `<clipPath id="${id}">${rounded(x, y, width, ROW_H, 20)}</clipPath>`,
     rounded(x, y, width, ROW_H, 20, 'class="row"'),
@@ -332,7 +332,7 @@ function renderCells(
       const paint = colors.length > 1 ? `url(#${gradientId})` : colors[0]
       parts.push(rounded(cx + 3, cy + 3, cellW - 6, cellH - 6, 15, `fill="${paint}" opacity="0.3"`))
     }
-    const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
+    const { rows, more, hidden } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     rows.forEach((dotRow, rowIndex) => {
       const dotY = cy + cellH / 2 + (9 + rowIndex * 11.5) * scale
       const center = cx + cellW / 2
@@ -346,11 +346,24 @@ function renderCells(
       })
       if (more > 0 && rowIndex === rows.length - 1) {
         const slot = center + step / 2
+        const hiddenColors = [...new Set(hidden.map((id) => COLORS[id] ?? WORK))]
+        const moreId = `more-${cell.dayKey}`
+        if (hiddenColors.length > 1 && !cell.isToday) {
+          const moreStops = hiddenColors
+            .map((color, stop) => {
+              const at = (stop / (hiddenColors.length - 1)) * 100
+              return `<stop offset="${at}%" stop-color="${color}"/>`
+            })
+            .join('')
+          parts.push(
+            `<linearGradient id="${moreId}" x1="0" y1="0" x2="1" y2="1">${moreStops}</linearGradient>`,
+          )
+        }
+        const solid = hiddenColors.length > 1 ? `url(#${moreId})` : hiddenColors[0]
+        const circleFill = cell.isToday ? '#FFFFFF' : solid
+        const size = 0.9 * scale
         parts.push(
-          ...[-1, 0, 1].map(
-            (side) =>
-              `<circle cx="${slot + side * 3.6 * scale}" cy="${dotY}" r="${1.2 * scale}" class="${cell.isToday ? 'on' : 't2'}"/>`,
-          ),
+          `<path transform="translate(${slot - 4 * size} ${dotY - 4 * size}) scale(${size})" fill-rule="evenodd" fill="${circleFill}" d="M0 4a4 4 0 1 0 8 0a4 4 0 1 0-8 0ZM3.25 1.5h1.5v1.75h1.75v1.5H4.75v1.75h-1.5V4.75H1.5v-1.5h1.75Z"/>`,
         )
       }
     })
@@ -383,9 +396,9 @@ function renderList(
   ].join('')
 }
 
-function monthCard(source: NormalizedEvent[], locale: Locale, label: string): string {
+function monthCard(source: NormalizedEvent[], locale: Locale, label: string, limit = 5): string {
   const width = 880
-  const items = agendaItems(source)
+  const items = agendaItems(source, limit)
   const cells = buildMonthGrid({
     year: 2026,
     month: 11,
@@ -394,7 +407,7 @@ function monthCard(source: NormalizedEvent[], locale: Locale, label: string): st
     events: source.filter((event) => !event.cancelled),
   })
   const listX = 424
-  const height = 26 + 28 + items.length * (ROW_H + ROW_GAP) - ROW_GAP + 26
+  const height = 26 + 28 + Math.max(items.length, 5) * (ROW_H + ROW_GAP) - ROW_GAP + 26
   const cellH = (height - 94 - 24) / (cells.length / 7)
   return svg(
     width,
@@ -419,20 +432,16 @@ function hero(): string {
 
 function lithuanian(): string {
   const today = [
-    ...fixture('work', 'Rytinis susirinkimas', 9, '09:15', '09:45'),
-    ...fixture('work', 'Kasdienis susitikimas', 9, '10:00', '10:15'),
-    ...fixture('work', 'Sprinto demonstracija', 9, '10:30', '11:30'),
-    ...fixture('work', 'Biudžeto peržiūra', 9, '13:00', '14:00').map((event) => ({
-      ...event,
-      cancelled: true,
-    })),
-    ...fixture('home', 'Anglų kalbos pamoka', 9, '14:00', '15:00'),
-    ...fixture('home', 'Odontologas', 9, '17:00', '17:45'),
+    ...fixture('home', 'LOFTAS Fest', 9, '09:15', '09:45'),
+    ...fixture('home', 'Odontologas', 9, '10:00', '10:15'),
+    ...fixture('work', 'Anglų kalbos pamoka', 9, '10:30', '11:30'),
+    ...fixture('home', 'Valgyti šaltibarščius', 9, '14:00', '14:30'),
   ]
   return monthCard(
     [...today, ...events.filter((event) => event.startDay !== '2026-11-09')],
     LITHUANIAN,
     'Eventide card translated into Lithuanian',
+    today.length,
   )
 }
 

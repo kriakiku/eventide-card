@@ -182,6 +182,25 @@ describe('eventide-card', () => {
     element.remove()
   })
 
+  test('the overflow circle blends the calendars that did not fit', async () => {
+    const extra = ['a', 'b', 'c'].map((name) => timed(name, 9, '16:00', '16:30'))
+    const element = await mount(
+      {
+        calendars: [
+          { entity: 'calendar.work', color: 'red' },
+          { entity: 'calendar.home', color: 'blue' },
+        ],
+      },
+      extra,
+    )
+    const today = element.shadowRoot?.querySelector('.day.today')
+    expect(today?.querySelectorAll('.dot')).toHaveLength(4)
+    expect(today?.querySelector('.more')?.getAttribute('style')).toContain(
+      'linear-gradient(135deg, red, blue)',
+    )
+    element.remove()
+  })
+
   test('uses custom translations for the current language', async () => {
     const element = await mount({
       translations: { en: { today: 'Now-ish', all_day: 'Whole day', time_left: '{time} to go' } },

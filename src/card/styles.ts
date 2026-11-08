@@ -129,30 +129,17 @@ export const cardStyles = css`
   }
   .more {
     flex: none;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 13px;
-    height: 13px;
-    margin: -2.5px;
-    color: var(--secondary-text-color);
-  }
-  .more::before {
-    content: '';
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow:
-      -4.5px 0 currentColor,
-      4.5px 0 currentColor;
+    width: 8px;
+    height: 8px;
+    background: var(--more);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath fill-rule='evenodd' d='M0 4a4 4 0 1 0 8 0a4 4 0 1 0-8 0ZM3.25 1.5h1.5v1.75h1.75v1.5H4.75v1.75h-1.5V4.75H1.5v-1.5h1.75Z'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
   }
   .day.today .dot {
     background: var(--text-primary-color, #fff);
   }
   .day.today .more {
-    color: var(--text-primary-color, #fff);
+    background: var(--text-primary-color, #fff);
   }
   .day.today {
     font-weight: 600;

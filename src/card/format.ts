@@ -197,6 +197,12 @@ export function dayBackground(colors: readonly string[]): string {
 
 const SERIES_SHIFTS = [-48, -32, -16, 0, 16, 32, 48]
 
+export function solidBackground(colors: readonly string[]): string {
+  const stops = [...new Set(colors)]
+  if (stops.length < 2) return stops[0] ?? ''
+  return `linear-gradient(135deg, ${stops.join(', ')})`
+}
+
 export function seriesShift(seriesId: string): number {
   let hash = 0x811c9dc5
   for (const char of seriesId) {
@@ -221,12 +227,20 @@ export function fadeEdges(
 const DOTS_IN_FIRST_ROW = 3
 const MAX_DOTS = 5
 
-export function dotsOf(calendarIds: readonly string[]): { rows: string[][]; more: number } {
+export function dotsOf(calendarIds: readonly string[]): {
+  rows: string[][]
+  more: number
+  hidden: string[]
+} {
   const shown = calendarIds.length <= MAX_DOTS ? calendarIds : calendarIds.slice(0, MAX_DOTS - 1)
   const rows = [shown.slice(0, DOTS_IN_FIRST_ROW), shown.slice(DOTS_IN_FIRST_ROW)].filter(
     (row) => row.length > 0,
   )
-  return { rows, more: calendarIds.length - shown.length }
+  return {
+    rows,
+    more: calendarIds.length - shown.length,
+    hidden: calendarIds.slice(shown.length),
+  }
 }
 
 export const WEEKDAYS = [

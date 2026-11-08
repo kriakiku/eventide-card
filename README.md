@@ -79,7 +79,7 @@ A day with events is tinted in the color of its calendar. When several calendars
   <img src="docs/gradient.svg" alt="Seven days tinted by one, two, three and four calendars" width="560">
 </p>
 
-Each event also gets a dot in its calendar's color. Three dots sit in the first row, and the fourth and fifth tuck in between them below. Past five events, the fifth place becomes an ellipsis, so a busy day never reaches the edges of its cell.
+Each event also gets a dot in its calendar's color. Three dots sit in the first row, and the fourth and fifth tuck in between them below. Past five events, the fifth place becomes a plus in a circle tinted with the colors of the events that didn't fit, so a busy day never reaches the edges of its cell.
 
 ## Colors for recurring events
 

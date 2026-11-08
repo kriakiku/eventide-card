@@ -13,6 +13,7 @@ import {
   groupTitle,
   monthTitle,
   resolveFirstWeekday,
+  solidBackground,
   seriesColor,
   seriesShift,
   showsEta,
@@ -182,6 +183,17 @@ describe('hour cycles and dots', () => {
     const result = dotsOf(Array.from({ length: count }, () => 'a'))
     expect(result.rows.map((row) => row.length)).toEqual(rows)
     expect(result.more).toBe(more)
+  })
+
+  test('reports which calendars did not fit', () => {
+    expect(dotsOf(['a', 'a', 'a', 'a', 'a']).hidden).toEqual([])
+    expect(dotsOf(['a', 'a', 'a', 'a', 'b', 'c']).hidden).toEqual(['b', 'c'])
+  })
+
+  test('solidBackground is one color or a gradient of distinct colors', () => {
+    expect(solidBackground([])).toBe('')
+    expect(solidBackground(['red', 'red'])).toBe('red')
+    expect(solidBackground(['red', 'blue', 'red'])).toBe('linear-gradient(135deg, red, blue)')
   })
 
   test('keeps the calendar order across rows', () => {

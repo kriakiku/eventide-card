@@ -18,6 +18,7 @@ import {
   monthTitle,
   resolveFirstWeekday,
   seriesColor,
+  solidBackground,
   showsEta,
   labelOf,
   resolveTranslation,
@@ -221,7 +222,7 @@ export class EventideCard extends LitElement {
       background ? 'busy' : '',
       cell.dayKey === this.selected ? 'selected' : '',
     ]
-    const { rows, more } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
+    const { rows, more, hidden } = dotsOf(cell.inMonth ? cell.eventCalendarIds : [])
     return html`<button
       class=${classes.filter(Boolean).join(' ')}
       style=${background ? `--bg:${background}` : ''}
@@ -239,7 +240,12 @@ export class EventideCard extends LitElement {
                     )}
                     ${
                       more > 0 && index === rows.length - 1
-                        ? html`<span class="more"></span>`
+                        ? html`<span
+                            class="more"
+                            style="--more:${solidBackground(
+                              hidden.flatMap((id) => context.colors.get(id) ?? []),
+                            )}"
+                          ></span>`
                         : nothing
                     }
                   </span>`,
