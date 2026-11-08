@@ -25,7 +25,7 @@
   .lbl { opacity: 0; animation: 12s step-end infinite; }
   .dim { animation: dim 12s step-end infinite; }
   @keyframes dim { 0%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0.45 } }
-  @keyframes tide { 0%, 12% { transform: scaleX(0) } 46% { transform: scaleX(1) } 84%, 100% { transform: scaleX(0) } }
+  @keyframes tide { 0%, 12% { transform: translateX(0) scaleX(0) } 46% { transform: translateX(0) scaleX(1) } 84%, 100% { transform: translateX(696px) scaleX(0) } }
   @keyframes wait { 0%, 11.99% { opacity: 0 } 12%, 45.99% { opacity: 1 } 46%, 100% { opacity: 0 } }
   @keyframes live { 0%, 45.99% { opacity: 0 } 46%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0 } }
   @keyframes la { 0%, -0.01% { opacity: 0 } 0%, 11.99% { opacity: 1 } 12%, 100% { opacity: 0 } }

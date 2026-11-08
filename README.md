@@ -33,7 +33,7 @@ Then add the card from the card picker. It has a visual editor for everything ex
 
 Most calendar cards tell you what is on your calendar. Eventide shows you how close it is.
 
-Every event row is its own progress bar. As a meeting approaches, the row fills up like a rising tide. When it starts, the row is full, and it drains as the time runs out. You can read the state of your day from across the room, without reading a single number.
+Every event row is its own progress bar. As a meeting approaches, the row fills up from the left like a rising tide. When it starts, the row is full, and the tide keeps moving the same way, draining from the left until the last of it slips off the right edge. You can read the state of your day from across the room, without reading a single number.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/tide.svg" alt="An event row filling up before the event starts and draining while it runs" width="640">
@@ -52,7 +52,7 @@ Every event row is its own progress bar. As a meeting approaches, the row fills 
 
 **Soon.** A dashed outline, and the fill rises during the lead time, one hour by default.
 
-**Running.** A solid outline, and the fill drains until the end.
+**Running.** A solid outline, and the fill drains from the left until the end.
 
 **Finished.** Dimmed, and a timed event stays for 30 more minutes, so you can still see what you just left.
 

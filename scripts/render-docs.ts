@@ -204,7 +204,7 @@ function renderRow(
   ]
   if (fillWidth > 0) {
     parts.push(
-      `<rect x="${x}" y="${y}" width="${fillWidth}" height="${ROW_H}" fill="${color}" opacity="0.3" clip-path="url(#${id})"/>`,
+      `<rect x="${phase === 'running' ? x + width - fillWidth : x}" y="${y}" width="${fillWidth}" height="${ROW_H}" fill="${color}" opacity="0.3" clip-path="url(#${id})"/>`,
     )
   }
   if (phase === 'soon' || phase === 'running') {
@@ -699,7 +699,7 @@ function tide(): string {
   .lbl { opacity: 0; animation: 12s step-end infinite; }
   .dim { animation: dim 12s step-end infinite; }
   @keyframes dim { 0%, 83.99% { opacity: 1 } 84%, 100% { opacity: 0.45 } }
-  @keyframes tide { 0%, 12% { transform: scaleX(0) } 46% { transform: scaleX(1) } 84%, 100% { transform: scaleX(0) } }
+  @keyframes tide { 0%, 12% { transform: translateX(0) scaleX(0) } 46% { transform: translateX(0) scaleX(1) } 84%, 100% { transform: translateX(${rowW}px) scaleX(0) } }
   ${fade('wait', 12, 46)}
   ${fade('live', 46, 84)}
   ${labels.map(([id, , on, off]) => fade(`l${id}`, on, off)).join('\n  ')}

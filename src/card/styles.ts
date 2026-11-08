@@ -218,6 +218,9 @@ export const cardStyles = css`
     inset: 0 auto 0 0;
     background: color-mix(in srgb, var(--c) 30%, transparent);
   }
+  .row.running .fill {
+    inset: 0 0 0 auto;
+  }
   .tile,
   .text,
   .eta {
