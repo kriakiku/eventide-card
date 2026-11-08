@@ -1,6 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
+import { mdiBookOpenVariant, mdiPresentation, mdiSync, mdiTooth } from '@mdi/js'
+
 import {
   dayOfMonth,
   dotsOf,
@@ -15,8 +17,10 @@ import {
 } from '../src/card/format.ts'
 import {
   buildAgenda,
+  applyRules,
   buildMonthGrid,
   buildWeekGrid,
+  compileRules,
   normalizeEvents,
   phaseOf,
   type AgendaItem,
@@ -181,7 +185,7 @@ function renderRow(
   x: number,
   y: number,
   width: number,
-  options: { color?: string; locale?: Locale } = {},
+  options: { color?: string; locale?: Locale; icon?: string } = {},
 ): string {
   const { event, phase } = item
   const color = options.color ?? COLORS[event.calendarId] ?? WORK
@@ -192,6 +196,7 @@ function renderRow(
   const eta = event.cancelled
     ? labelOf(locale.translation, 'cancelled')
     : etaText(item, locale.language, locale.translation)
+  const iconSpace = options.icon ? 28 : 0
   const textWidth = width - 72 - 14 - eta.length * 15 * 0.49 - 10
   const parts = [
     `<clipPath id="${id}">${rounded(x, y, width, ROW_H, 20)}</clipPath>`,
@@ -244,11 +249,11 @@ function renderRow(
       'text-anchor="middle" font-weight="600"',
     ),
     text(
-      x + 72,
+      x + 72 + iconSpace,
       y + 32,
       finished ? 't3' : 't1',
       19,
-      fit(event.summary, 19, textWidth),
+      fit(event.summary, 19, textWidth - iconSpace),
       `font-weight="600"${event.cancelled ? ' text-decoration="line-through"' : ''}`,
     ),
     text(
@@ -271,6 +276,11 @@ function renderRow(
       `text-anchor="end" font-weight="${finished ? 400 : 600}"`,
     ),
   )
+  if (options.icon) {
+    parts.push(
+      `<path transform="translate(${x + 72} ${y + 14}) scale(${22 / 24})" d="${options.icon}" class="${finished ? 't3' : 't1'}"/>`,
+    )
+  }
   return parts.join('')
 }
 
@@ -609,6 +619,32 @@ function cancelledPreview(): string {
   return svg(width, height, 'A cancelled event struck through between two others', body.join(''))
 }
 
+function iconsPreview(): string {
+  const width = 520
+  const paths: Record<string, string> = {
+    'mdi:sync': mdiSync,
+    'mdi:presentation': mdiPresentation,
+    'mdi:book-open-variant': mdiBookOpenVariant,
+    'mdi:tooth': mdiTooth,
+  }
+  const rules = compileRules([
+    { match: 'daily', icon: 'mdi:sync' },
+    { match: 'demo|review', icon: 'mdi:presentation' },
+    { match: 'language|class', icon: 'mdi:book-open-variant' },
+    { match: 'dentist', icon: 'mdi:tooth' },
+  ])
+  const names = ['Daily sync', 'Sprint demo', 'Language class', 'Dentist']
+  const rows = events.filter((event) => names.includes(event.summary))
+  const body = rows.map((event, index) => {
+    const { icon } = applyRules(rules, event.summary)
+    return renderRow({ event, ...phaseOf(event, NOW) }, 0, index * (ROW_H + ROW_GAP), width, {
+      icon: paths[icon ?? ''] ?? '',
+    })
+  })
+  const height = rows.length * (ROW_H + ROW_GAP) - ROW_GAP
+  return svg(width, height, 'Event rows with an icon before the title', body.join(''))
+}
+
 function clockPreview(): string {
   const width = 420
   const cellW = 54
@@ -713,6 +749,7 @@ const images: Record<string, string> = {
   'gradient.svg': gradientPreview(),
   'series.svg': seriesPreview(),
   'hero.svg': hero(),
+  'icons.svg': iconsPreview(),
   'lithuanian.svg': lithuanian(),
   'panel.svg': panel(),
   'states.svg': states(),

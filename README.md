@@ -103,6 +103,32 @@ Outlook marks a cancelled meeting with a prefix in its title, such as `Canceled:
 
 Home Assistant currently removes events with a cancelled status before they reach any card, so Google Calendar cancellations can't be shown.
 
+## Icons
+
+Give events an icon with `rules`. It appears before the title, and it's picked by matching the title.
+
+<p align="center">
+  <img src="docs/icons.svg" alt="Event rows with sync, presentation, book and tooth icons before their titles" width="480">
+</p>
+
+```yaml
+type: custom:eventide-card
+calendars:
+  - calendar.work
+  - calendar.personal
+rules:
+  - match: daily
+    icon: mdi:sync
+  - match: demo|review
+    icon: mdi:presentation
+  - match: language|class
+    icon: mdi:book-open-variant
+  - match: dentist
+    icon: mdi:tooth
+```
+
+`match` is a case-insensitive regular expression, and `exact` matches a whole title. You can use any icon Home Assistant knows, including the `mdi:` set and icons from custom integrations.
+
 ## Renaming events
 
 Long or noisy titles can be replaced with your own through `rules`. Use `exact` for a title that must match completely, including case, and `match` for a case-insensitive regular expression. The whole title is replaced, and `$1` to `$9` insert what the groups in `match` captured.
