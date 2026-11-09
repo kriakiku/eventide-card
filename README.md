@@ -18,12 +18,13 @@
 
 **With Marketplace (Home Assistant 2026.11 and newer).** Marketplace is the store built into Home Assistant.
 
-1. Open `/marketplace` in your Home Assistant and choose **Add from link**.
-2. Paste `https://github.com/kriakiku/eventide-card`. The first time, you are asked to connect GitHub with a short code.
-3. Open **Eventide** in the list and install it. The dashboard resource is added for you.
-4. Reload the page.
+1. Open `/marketplace` in your Home Assistant and search for **Eventide**. The first time, you are asked to connect GitHub with a short code.
+2. Open **Eventide** in the list and install it. The dashboard resource is added for you.
+3. Reload the page.
 
-**With HACS (older versions).** Open HACS, choose the three dots in the top corner and then **Custom repositories**. Add `https://github.com/kriakiku/eventide-card` with the type **Dashboard**, then find Eventide in HACS and download it.
+**With HACS (older versions).** Open HACS, search for **Eventide** and download it.
+
+**If Eventide is not listed.** In Marketplace, choose **Add from link** and paste `https://github.com/kriakiku/eventide-card`. In HACS, choose the three dots in the top corner and then **Custom repositories**, and add the same link with the type **Dashboard**. Then install Eventide as above.
 
 **By hand.** Download `eventide-card.js` from the [latest release](https://github.com/kriakiku/eventide-card/releases/latest), put it in your `www` folder and add `/local/eventide-card.js` as a JavaScript module under your dashboard resources.
 
@@ -286,7 +287,7 @@ rules:
 - [x] First release
 - [x] Visual editor
 - [x] HACS support as a custom repository
-- [ ] Listing in the default HACS store
+- [x] Listing in the default HACS store
 
 ## Development
 
