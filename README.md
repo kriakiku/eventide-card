@@ -4,8 +4,10 @@
 
 **A Home Assistant calendar card where events rise before they start and ebb while they run.**
 
-[![CI](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml/badge.svg)](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-7F77DD.svg)](https://github.com/kriakiku/eventide-card/blob/main/LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/kriakiku/eventide-card?color=7F77DD&label=release)](https://github.com/kriakiku/eventide-card/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/kriakiku/eventide-card/ci.yml?branch=main&label=CI)](https://github.com/kriakiku/eventide-card/actions/workflows/ci.yml)
+[![HACS: default](https://img.shields.io/badge/HACS-default-41BDF5.svg)](https://github.com/kriakiku/eventide-card#install)
+[![License: MIT](https://img.shields.io/github/license/kriakiku/eventide-card?color=7F77DD)](https://github.com/kriakiku/eventide-card/blob/main/LICENSE)
 
 <img src="https://raw.githubusercontent.com/kriakiku/eventide-card/main/docs/hero.svg" alt="Eventide card with a month grid next to an agenda of finished, running and upcoming events" width="760">
 
@@ -22,7 +24,9 @@
 2. Open **Eventide** in the list and install it. The dashboard resource is added for you.
 3. Reload the page.
 
-**With HACS (older versions).** Open HACS, search for **Eventide** and download it.
+**With HACS (older versions).** Open HACS, search for **Eventide** and download it, or press the button.
+
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=kriakiku&repository=eventide-card&category=plugin)
 
 **If Eventide is not listed.** In Marketplace, choose **Add from link** and paste `https://github.com/kriakiku/eventide-card`. In HACS, choose the three dots in the top corner and then **Custom repositories**, and add the same link with the type **Dashboard**. Then install Eventide as above.
 
